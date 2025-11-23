@@ -1,0 +1,22 @@
+Index: src/kssl/ksslutils.cpp
+--- src/kssl/ksslutils.cpp.orig
++++ src/kssl/ksslutils.cpp
+@@ -32,15 +32,15 @@
+ QDateTime ASN1_UTCTIME_QDateTime(ASN1_UTCTIME *tm, int *isGmt)
+ {
+     QDateTime qdt;
+-    char *v;
++    const char *v;
+     int gmt = 0;
+     int i;
+     int y = 0, M = 0, d = 0, h = 0, m = 0, s = 0;
+     QDate qdate;
+     QTime qtime;
+ 
+-    i = tm->length;
+-    v = (char *)tm->data;
++    i = ASN1_STRING_length(tm);
++    v = (const char *)ASN1_STRING_get0_data(tm);
+ 
+     if (i < 10) {
+         goto auq_err;
