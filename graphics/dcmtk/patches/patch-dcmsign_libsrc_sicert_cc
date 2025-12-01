@@ -1,0 +1,21 @@
+Index: dcmsign/libsrc/sicert.cc
+--- dcmsign/libsrc/sicert.cc.orig
++++ dcmsign/libsrc/sicert.cc
+@@ -507,13 +507,13 @@ OFCondition SiCertificate::convertGeneralizedTime(cons
+     unsigned int dt_minute = 0;
+     double dt_second = 0.0;
+     double dt_timeZone = 0.0;
+-    char *a;
++    const char *a;
+     int n, i, l, o;
+ 
+     if (d == NULL) return EC_IllegalCall;
+-    if (d->type != V_ASN1_GENERALIZEDTIME) return EC_IllegalCall;
+-    l = d->length;
+-    a = (char *)d->data;
++    if (ASN1_STRING_type(d) != V_ASN1_GENERALIZEDTIME) return EC_IllegalCall;
++    l = ASN1_STRING_length(d);
++    a = (const char *)ASN1_STRING_get0_data(d);
+     o = 0;
+     /*
+      * GENERALIZEDTIME is similar to UTCTIME except the year is represented
