@@ -1,0 +1,94 @@
+Index: packages/ssl/ssl4pl.c
+--- packages/ssl/ssl4pl.c.orig
++++ packages/ssl/ssl4pl.c
+@@ -457,12 +457,12 @@ unify_asn1_time(term_t term, const ASN1_TIME *time)
+ { time_t result = 0;
+   char buffer[24];
+   char* pbuffer = buffer;
+-  size_t length = time->length;
+-  char * source = (char *)time->data;
++  size_t length = ASN1_STRING_length(time);
++  const char * source = (const char *)ASN1_STRING_get0_data(time);
+   struct tm time_tm;
+   time_t lSecondsFromUTC;
+ 
+-  if (time->type == V_ASN1_UTCTIME)
++  if (ASN1_STRING_type(time) == V_ASN1_UTCTIME)
+   {  if ((length < 11) || (length > 17))
+      {  ssl_deb(2, "Unable to parse time - expected either 11 or 17 chars,"
+ 		   " not %d", length);
+@@ -760,21 +760,23 @@ unify_crl(term_t term, X509_CRL* crl)
+   unsigned char* p;
+   term_t revocation_date;
+   BIO* mem;
++  const ASN1_OBJECT *algorithm;
+ 
+   mem = BIO_new(BIO_s_mem());
+   if (mem == NULL)
+     return PL_resource_error("memory");
+ 
+   X509_CRL_get0_signature(crl, &psig, &palg);
++  X509_ALGOR_get0(&algorithm, NULL, NULL, palg);
+   i2a_ASN1_INTEGER(mem, (ASN1_BIT_STRING *) psig);
+   if (!(unify_name(issuer, X509_CRL_get_issuer(crl)) &&
+ #ifdef HAVE_X509_CRL_DIGEST
+-	unify_hash(hash, palg->algorithm, hash_X509_crl_digest_wrapper, crl) &&
++	unify_hash(hash, algorithm, hash_X509_crl_digest_wrapper, crl) &&
+ #else
+-        unify_hash(hash, palg->algorithm, i2d_X509_CRL_INFO_wrapper, crl->crl) &&
++        unify_hash(hash, algorithm, i2d_X509_CRL_INFO_wrapper, crl->crl) &&
+ #endif
+         unify_asn1_time(next_update, X509_CRL_get0_nextUpdate(crl)) &&
+-        unify_bytes_hex(signature, psig->length, psig->data) &&
++        unify_bytes_hex(signature, ASN1_STRING_length(psig), ASN1_STRING_get0_data(psig)) &&
+         PL_unify_term(term,
+                       PL_LIST, 5,
+                       PL_FUNCTOR, FUNCTOR_issuername1,
+@@ -1351,7 +1353,7 @@ fetch_crls(term_t Field, X509* cert)
+         { name = sk_GENERAL_NAME_value(point->distpoint->name.fullname, j);
+           if (name != NULL && name->type == GEN_URI)
+           { if (!(PL_unify_list(crl_list, crl_item, crl_list) &&
+-                  PL_unify_atom_chars(crl_item, (const char *)name->d.ia5->data)))
++                  PL_unify_atom_chars(crl_item, (const char *)ASN1_STRING_get0_data(name->d.ia5))))
+             {
+               CRL_DIST_POINTS_free(distpoints);
+               return FALSE;
+@@ -1417,7 +1419,7 @@ fetch_signature(term_t Field, X509* cert)
+ { GET0SIG_CONST_T ASN1_BIT_STRING *psig;
+   GET0SIG_CONST_T X509_ALGOR *palg;
+   X509_get0_signature(&psig, &palg, cert);
+-  return unify_bytes_hex(Field, psig->length, psig->data);
++  return unify_bytes_hex(Field, ASN1_STRING_length(psig), ASN1_STRING_get0_data(psig));
+ }
+ 
+ 
+@@ -1426,9 +1428,11 @@ fetch_signature_algorithm(term_t Field, X509* cert)
+ { GET0SIG_CONST_T ASN1_BIT_STRING *psig;
+   GET0SIG_CONST_T X509_ALGOR *palg;
+   const char *salgorithm;
++  const ASN1_OBJECT *algorithm;
+ 
+   X509_get0_signature(&psig, &palg, cert);
+-  if ((salgorithm = OBJ_nid2sn(OBJ_obj2nid(palg->algorithm))) != NULL)
++  X509_ALGOR_get0(&algorithm, NULL, NULL, palg);
++  if ((salgorithm = OBJ_nid2sn(OBJ_obj2nid(algorithm))) != NULL)
+   { return PL_unify_chars(Field, PL_ATOM|REP_UTF8, strlen(salgorithm), salgorithm);
+   }
+   return FALSE;
+@@ -1438,12 +1442,14 @@ static foreign_t
+ fetch_hash(term_t Field, X509* cert)
+ { GET0SIG_CONST_T ASN1_BIT_STRING *psig;
+   GET0SIG_CONST_T X509_ALGOR *palg;
++  const ASN1_OBJECT *algorithm;
+ 
+   X509_get0_signature(&psig, &palg, cert);
++  X509_ALGOR_get0(&algorithm, NULL, NULL, palg);
+ #ifdef HAVE_X509_DIGEST
+-  return unify_hash(Field, palg->algorithm, hash_X509_digest_wrapper, cert);
++  return unify_hash(Field, algorithm, hash_X509_digest_wrapper, cert);
+ #else
+-  return unify_hash(Field, palg->algorithm, i2d_X509_CINF_wrapper, cert->cert_info);
++  return unify_hash(Field, algorithm, i2d_X509_CINF_wrapper, cert->cert_info);
+ #endif
+ }
+ 
