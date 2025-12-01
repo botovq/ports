@@ -5,6 +5,41 @@ and any settings in the php file, which results in bogus failures).
 Index: ext/openssl/openssl.c
 --- ext/openssl/openssl.c.orig
 +++ ext/openssl/openssl.c
+@@ -739,7 +739,7 @@ static void php_openssl_add_assoc_name_entry(zval * va
+ 
+ static void php_openssl_add_assoc_asn1_string(zval * val, char * key, ASN1_STRING * str) /* {{{ */
+ {
+-	add_assoc_stringl(val, key, (char *)str->data, str->length);
++	add_assoc_stringl(val, key, (const char *)ASN1_STRING_get0_data(str), ASN1_STRING_length(str));
+ }
+ /* }}} */
+ 
+@@ -772,12 +772,12 @@ static time_t php_openssl_asn1_time_to_time_t(ASN1_UTC
+ 	}
+ 
+ 	if (timestr_len < 13) {
+-		php_error_docref(NULL, E_WARNING, "Unable to parse time string %s correctly", timestr->data);
++		php_error_docref(NULL, E_WARNING, "Unable to parse time string %s correctly", ASN1_STRING_get0_data(timestr));
+ 		return (time_t)-1;
+ 	}
+ 
+ 	if (ASN1_STRING_type(timestr) == V_ASN1_GENERALIZEDTIME && timestr_len < 15) {
+-		php_error_docref(NULL, E_WARNING, "Unable to parse time string %s correctly", timestr->data);
++		php_error_docref(NULL, E_WARNING, "Unable to parse time string %s correctly", ASN1_STRING_get0_data(timestr));
+ 		return (time_t)-1;
+ 	}
+ 
+@@ -2044,8 +2044,8 @@ static int openssl_x509v3_subjectAltName(BIO *bio, X50
+ 	}
+ 
+ 	extension_data = X509_EXTENSION_get_data(extension);
+-	p = extension_data->data;
+-	length = extension_data->length;
++	p = ASN1_STRING_get0_data(extension_data);
++	length = ASN1_STRING_length(extension_data);
+ 	if (method->it) {
+ 		names = (GENERAL_NAMES*) (ASN1_item_d2i(NULL, &p, length,
+ 			ASN1_ITEM_ptr(method->it)));
 @@ -3800,7 +3800,7 @@ static int php_openssl_get_evp_pkey_type(int key_type)
  /* {{{ php_openssl_generate_private_key */
  static EVP_PKEY * php_openssl_generate_private_key(struct php_x509_request * req)
@@ -14,3 +49,30 @@ Index: ext/openssl/openssl.c
  		php_error_docref(NULL, E_WARNING, "Private key length must be at least %d bits, configured to %d",
  			MIN_KEY_LENGTH, req->priv_key_bits);
  		return NULL;
+@@ -4435,7 +4435,7 @@ static bool php_openssl_pkey_init_legacy_ec(EC_KEY *ec
+ 				goto clean_exit;
+ 			}
+ 
+-			if (!EC_POINT_set_affine_coordinates_GFp(group, point_g, g_x, g_y, bctx)) {
++			if (!EC_POINT_set_affine_coordinates(group, point_g, g_x, g_y, bctx)) {
+ 				goto clean_exit;
+ 			}
+ 		}
+@@ -4482,7 +4482,7 @@ static bool php_openssl_pkey_init_legacy_ec(EC_KEY *ec
+ 	} else if (x && y) {
+ 		/* OpenSSL does not allow setting EC_PUB_X/EC_PUB_Y, so convert to encoded format. */
+ 		point_q = EC_POINT_new(group);
+-		if (!point_q || !EC_POINT_set_affine_coordinates_GFp(group, point_q, x, y, bctx)) {
++		if (!point_q || !EC_POINT_set_affine_coordinates(group, point_q, x, y, bctx)) {
+ 			goto clean_exit;
+ 		}
+ 	}
+@@ -5374,7 +5374,7 @@ PHP_FUNCTION(openssl_pkey_get_details)
+ 
+ 				pub = EC_KEY_get0_public_key(ec_key);
+ 
+-				if (EC_POINT_get_affine_coordinates_GFp(ec_group, pub, x, y, NULL)) {
++				if (EC_POINT_get_affine_coordinates(ec_group, pub, x, y, NULL)) {
+ 					php_openssl_add_bn_to_array(&ec, x, "x");
+ 					php_openssl_add_bn_to_array(&ec, y, "y");
+ 				} else {
