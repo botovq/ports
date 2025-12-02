@@ -1,0 +1,30 @@
+Index: src/core/network-openssl.c
+--- src/core/network-openssl.c.orig
++++ src/core/network-openssl.c
+@@ -111,7 +111,7 @@ static const char *tls_dns_name(const GENERAL_NAME * g
+ 	}
+ 
+ 	/* Safe to treat as an ASCII string possibly holding a DNS name */
+-	dnsname = (char *) ASN1_STRING_data(gn->d.ia5);
++	dnsname = (const char *) ASN1_STRING_get0_data(gn->d.ia5);
+ 
+ 	if (has_internal_nul(dnsname, ASN1_STRING_length(gn->d.ia5))) {
+ 		g_warning("Internal NUL in subjectAltName");
+@@ -683,7 +683,7 @@ static void set_peer_cert_chain_info(TLS_REC *tls, SSL
+ {
+ 	int nid;
+ 	char *key = NULL;
+-	char *value = NULL;
++	const char *value = NULL;
+ 	STACK_OF(X509) *chain = NULL;
+ 	int i;
+ 	int j;
+@@ -717,7 +717,7 @@ static void set_peer_cert_chain_info(TLS_REC *tls, SSL
+ 				key = (char *)OBJ_nid2ln(nid);
+ 
+ 			data = X509_NAME_ENTRY_get_data(entry);
+-			value = (char *)ASN1_STRING_data(data);
++			value = (const char *)ASN1_STRING_get0_data(data);
+ 
+ 			tls_cert_entry_rec = tls_cert_entry_create_rec(key, value);
+ 			tls_cert_rec_append_subject_entry(cert_rec, tls_cert_entry_rec);
