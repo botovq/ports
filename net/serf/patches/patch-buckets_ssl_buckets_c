@@ -1,6 +1,21 @@
 Index: buckets/ssl_buckets.c
 --- buckets/ssl_buckets.c.orig
 +++ buckets/ssl_buckets.c
+@@ -567,11 +567,11 @@ get_subject_alt_names(apr_array_header_t **san_arr, X5
+             switch (nm->type) {
+                 case GEN_DNS:
+                     if (copy_action == ErrorOnNul &&
+-                        strlen(nm->d.ia5->data) != nm->d.ia5->length)
++                        strlen(ASN1_STRING_get0_data(nm->d.ia5)) != ASN1_STRING_length(nm->d.ia5))
+                         return SERF_ERROR_SSL_CERT_FAILED;
+                     if (san_arr && *san_arr)
+-                        p = pstrdup_escape_nul_bytes((const char *)nm->d.ia5->data,
+-                                                     nm->d.ia5->length,
++                        p = pstrdup_escape_nul_bytes((const char *)ASN1_STRING_get0_data(nm->d.ia5),
++                                                     ASN1_STRING_length(nm->d.ia5),
+                                                      pool);
+                     break;
+                 default:
 @@ -1186,7 +1186,7 @@ static void init_ssl_libraries(void)
          }
  #endif
