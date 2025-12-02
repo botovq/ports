@@ -1,0 +1,19 @@
+Index: conn/openssl.c
+--- conn/openssl.c.orig
++++ conn/openssl.c
+@@ -748,11 +748,11 @@ static int check_host(X509 *x509cert, const char *host
+       subj_alt_name = sk_GENERAL_NAME_value(subj_alt_names, i);
+       if (subj_alt_name->type == GEN_DNS)
+       {
+-        if ((subj_alt_name->d.ia5->length >= 0) &&
+-            (mutt_str_len((char *) subj_alt_name->d.ia5->data) ==
+-             (size_t) subj_alt_name->d.ia5->length) &&
++        if ((ASN1_STRING_length(subj_alt_name->d.ia5) >= 0) &&
++            (mutt_str_len((const char *) ASN1_STRING_get0_data(subj_alt_name->d.ia5)) ==
++             (size_t) ASN1_STRING_length(subj_alt_name->d.ia5)) &&
+             (match_found = hostname_match(hostname_ascii,
+-                                          (char *) (subj_alt_name->d.ia5->data))))
++                                          (const char *) (ASN1_STRING_get0_data(subj_alt_name->d.ia5)))))
+         {
+           break;
+         }
