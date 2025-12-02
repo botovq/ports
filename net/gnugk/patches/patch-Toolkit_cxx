@@ -1,0 +1,12 @@
+Index: Toolkit.cxx
+--- Toolkit.cxx.orig
++++ Toolkit.cxx
+@@ -2528,7 +2528,7 @@ bool Toolkit::MatchHostCert(SSL * ssl, PIPSocket::Addr
+ 		for (int i = 0; i < sk_GENERAL_NAME_num(altnames); i++) {
+ 			GENERAL_NAME * gn = sk_GENERAL_NAME_value(altnames, i);
+ 			if (gn && (gn->type == GEN_DNS)) {
+-				char * dns = (char *)ASN1_STRING_data(gn->d.ia5);
++				const char * dns = (const char *)ASN1_STRING_get0_data(gn->d.ia5);
+ 				if (dns) {
+ 					PTRACE(5, "TLS\tChecking Certificate DNS " << dns);
+ 					if (::AsString(addr) == dns) {
