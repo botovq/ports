@@ -1,0 +1,84 @@
+Index: src/extension.c
+--- src/extension.c.orig
++++ src/extension.c
+@@ -124,10 +124,10 @@ ku2json(void const *ext)
+ 	json_t *parent;
+ 	json_t *child;
+ 
+-	if (ku->length < 1 || 2 < ku->length)
++	if (ASN1_STRING_length(ku) < 1 || 2 < ASN1_STRING_length(ku))
+ 		return NULL;
+ 	memset(data, 0, sizeof(data));
+-	memcpy(data, ku->data, ku->length);
++	memcpy(data, ASN1_STRING_get0_data(ku), ASN1_STRING_length(ku));
+ 
+ 	parent = json_obj_new();
+ 	if (parent == NULL)
+@@ -452,21 +452,24 @@ p2json(ASN1_BIT_STRING const *ap, int af)
+ {
+ 	unsigned char bin[16];
+ 	char str[INET6_ADDRSTRLEN];
++	size_t len;
+ 	unsigned int length;
++	int unused_bits;
+ 	char full[INET6_ADDRSTRLEN + 4];
+ 	int written;
+ 
+ 	if (ap == NULL)
+ 		return json_null();
+ 
++	if (!ASN1_BIT_STRING_get_length(ap, &len, &unused_bits))
++		return NULL;
++
+ 	memset(bin, 0, sizeof(bin));
+-	memcpy(bin, ap->data, ap->length);
++	memcpy(bin, ASN1_STRING_get0_data(ap), len);
+ 	if (inet_ntop(af, bin, str, INET6_ADDRSTRLEN) == NULL)
+ 		return NULL;
+ 
+-	length = 8 * ap->length;
+-	if (ap->flags & ASN1_STRING_FLAG_BITS_LEFT)
+-		length -= ap->flags & 7;
++	length = 8 * len -unused_bits;
+ 
+ 	written = snprintf(full, INET6_ADDRSTRLEN + 4, "%s/%u", str, length);
+ 	return json_strn_new(full, written);
+@@ -547,13 +550,15 @@ iaf2json(IPAddressFamily const *iaf)
+ 		return NULL;
+ 
+ 	af = iaf->addressFamily;
+-	if (af->length != 2)
++	if (ASN1_STRING_length(af) != 2)
+ 		goto fail;
+ 
+-	if (af->data[0] == 0 && af->data[1] == 1) {
++	if (ASN1_STRING_get0_data(af)[0] == 0 &&
++	    ASN1_STRING_get0_data(af)[1] == 1) {
+ 		family = "IPv4";
+ 		afid = AF_INET;
+-	} else if (af->data[0] == 0 && af->data[1] == 2) {
++	} else if (ASN1_STRING_get0_data(af)[0] == 0 &&
++	    ASN1_STRING_get0_data(af)[1] == 2) {
+ 		family = "IPv6";
+ 		afid = AF_INET6;
+ 	} else {
+@@ -979,16 +984,16 @@ validate_public_key_hash(X509 *cert, ASN1_OCTET_STRING
+ 		return val_crypto_err("X509_PUBKEY_get0_param() returned %d", ok);
+ 
+ 	/* Hash the SPK, compare SPK hash with the SKI */
+-	if (hash->length < 0 || SIZE_MAX < hash->length) {
++	if (ASN1_STRING_length(hash) < 0 || SIZE_MAX < ASN1_STRING_length(hash)) {
+ 		return pr_val_err("%s length (%d) is out of bounds. (0-%zu)",
+-		    ext_ski()->name, hash->length, SIZE_MAX);
++		    ext_ski()->name, ASN1_STRING_length(hash), SIZE_MAX);
+ 	}
+ 	if (spk_len < 0 || SIZE_MAX < spk_len) {
+ 		return pr_val_err("Subject Public Key length (%d) is out of bounds. (0-%zu)",
+ 		    spk_len, SIZE_MAX);
+ 	}
+ 
+-	error = hash_validate("sha1", hash->data, hash->length, spk, spk_len);
++	error = hash_validate("sha1", ASN1_STRING_get0_data(hash), ASN1_STRING_length(hash), spk, spk_len);
+ 	if (error) {
+ 		pr_val_err("The Subject Public Key's hash does not match the %s.",
+ 		    ext_ski()->name);

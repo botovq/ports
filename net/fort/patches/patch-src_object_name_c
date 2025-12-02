@@ -1,0 +1,16 @@
+Index: src/object/name.c
+--- src/object/name.c.orig
++++ src/object/name.c
+@@ -30,9 +30,9 @@ name2string(X509_NAME_ENTRY *name, char **_result)
+ 	if (data == NULL)
+ 		return val_crypto_err("X509_NAME_ENTRY_get_data() returned NULL");
+ 
+-	result = pmalloc(data->length + 1);
+-	memcpy(result, data->data, data->length);
+-	result[data->length] = '\0';
++	result = pmalloc(ASN1_STRING_get0_data(data) + 1);
++	memcpy(result, ASN1_STRING_get0_data(data), ASN1_STRING_length(data));
++	result[ASN1_STRING_length(data)] = '\0';
+ 
+ 	*_result = result;
+ 	return 0;

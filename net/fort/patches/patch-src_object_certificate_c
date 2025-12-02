@@ -1,0 +1,63 @@
+Index: src/object/certificate.c
+--- src/object/certificate.c.orig
++++ src/object/certificate.c
+@@ -1097,7 +1097,8 @@ handle_ip_extension(X509_EXTENSION *ext, struct resour
+ 	int error;
+ 
+ 	string = X509_EXTENSION_get_data(ext);
+-	error = asn1_decode(string->data, string->length, &asn_DEF_IPAddrBlocks,
++	error = asn1_decode(ASN1_STRING_get0_data(string),
++	    ASN1_STRING_length(string), &asn_DEF_IPAddrBlocks,
+ 	    (void **) &blocks, true);
+ 	if (error)
+ 		return error;
+@@ -1145,7 +1146,8 @@ handle_asn_extension(X509_EXTENSION *ext, struct resou
+ 	int error;
+ 
+ 	string = X509_EXTENSION_get_data(ext);
+-	error = asn1_decode(string->data, string->length,
++	error = asn1_decode(ASN1_STRING_get0_data(string),
++	    ASN1_STRING_length(string),
+ 	    &asn_DEF_ASIdentifiers, (void **) &ids, true);
+ 	if (error)
+ 		return error;
+@@ -1251,8 +1253,9 @@ is_rsync(ASN1_IA5STRING *uri)
+ 	static char const *const PREFIX = "rsync://";
+ 	size_t prefix_len = strlen(PREFIX);
+ 
+-	return (uri->length >= prefix_len)
+-	    ? (strncmp((char *) uri->data, PREFIX, strlen(PREFIX)) == 0)
++	return (ASN1_STRING_length(uri) >= prefix_len)
++	    ? (strncmp((const char *) ASN1_STRING_get0_data(uri),
++	    PREFIX, strlen(PREFIX)) == 0)
+ 	    : false;
+ }
+ 
+@@ -1331,8 +1334,8 @@ handle_ski_ee(void *ext, void *arg)
+ 	/* rfc6488#section-2.1.6.2 */
+ 	/* rfc6488#section-3.1.c 2/2 */
+ 	sid = args->sid;
+-	if (ski->length != sid->size
+-	    || memcmp(ski->data, sid->buf, sid->size) != 0) {
++	if (ASN1_STRING_length(ski) != sid->size
++	    || memcmp(ASN1_STRING_get0_data(ski), sid->buf, sid->size) != 0) {
+ 		return pr_val_err("The EE certificate's subjectKeyIdentifier does not equal the Signed Object's sid.");
+ 	}
+ 
+@@ -1378,13 +1381,13 @@ handle_ku(ASN1_BIT_STRING *ku, unsigned char byte1)
+ 
+ 	unsigned char data[2];
+ 
+-	if (ku->length != 2 && ku->length != 1) {
++	if (ASN1_STRING_length(ku) != 2 && ASN1_STRING_length(ku) != 1) {
+ 		return pr_val_err("Bogus %s length: %d",
+-		    ext_ku()->name, ku->length);
++		    ext_ku()->name, ASN1_STRING_length(ku));
+ 	}
+ 
+ 	memset(data, 0, sizeof(data));
+-	memcpy(data, ku->data, ku->length);
++	memcpy(data, ASN1_STRING_get0_data(ku), ASN1_STRING_length(ku));
+ 
+ 	if (data[0] != byte1 || data[1] != 0) {
+ 		return pr_val_err("Illegal key usage flag string: %d%d%d%d%d%d%d%d%d",

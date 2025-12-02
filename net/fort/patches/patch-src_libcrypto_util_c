@@ -1,0 +1,32 @@
+Index: src/libcrypto_util.c
+--- src/libcrypto_util.c.orig
++++ src/libcrypto_util.c
+@@ -99,8 +99,8 @@ asn1str2json(ASN1_STRING const *str)
+ 	if (bio == NULL)
+ 		return NULL;
+ 
+-	for (i = 0; i < str->length; i++) {
+-		if (BIO_printf(bio, "%02x", str->data[i]) <= 0) {
++	for (i = 0; i < ASN1_STRING_length(str); i++) {
++		if (BIO_printf(bio, "%02x", ASN1_STRING_get0_data(str)[i]) <= 0) {
+ 			BIO_free_all(bio);
+ 			return NULL;
+ 		}
+@@ -160,7 +160,7 @@ name2json(X509_NAME const *name)
+ 		if (json_object_add(typeval, "type", child))
+ 			goto fail;
+ 
+-		child = json_strn_new((char *)data->data, data->length);
++		child = json_strn_new((char const *)ASN1_STRING_get0_data(data), ASN1_STRING_length(data));
+ 		if (json_object_add(typeval, "value", child))
+ 			goto fail;
+ 	}
+@@ -182,7 +182,7 @@ gn2json(GENERAL_NAME *gn)
+ 
+ 	str = GENERAL_NAME_get0_value(gn, &type);
+ 	return (type == GEN_URI)
+-	    ? json_strn_new((char const *)str->data, str->length)
++	    ? json_strn_new((char const *)ASN1_STRING_get0_data(str), ASN1_STRING_length(str))
+ 	    : json_str_new("<Not implemented for now>");
+ }
+ 
