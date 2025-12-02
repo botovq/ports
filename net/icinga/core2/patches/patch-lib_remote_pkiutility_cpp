@@ -1,0 +1,14 @@
+Index: lib/remote/pkiutility.cpp
+--- lib/remote/pkiutility.cpp.orig
++++ lib/remote/pkiutility.cpp
+@@ -345,8 +345,8 @@ String PkiUtility::GetCertificateInformation(const std
+ 	pre = "\n Serial:              ";
+ 	BIO_write(out, pre.CStr(), pre.GetLength());
+ 	ASN1_INTEGER *asn1_serial = X509_get_serialNumber(cert.get());
+-	for (int i = 0; i < asn1_serial->length; i++) {
+-		BIO_printf(out, "%02x%c", asn1_serial->data[i], ((i + 1 == asn1_serial->length) ? '\n' : ':'));
++	for (int i = 0; i < ASN1_STRING_length(asn1_serial); i++) {
++		BIO_printf(out, "%02x%c", ASN1_STRING_get0_data(asn1_serial)[i], ((i + 1 == ASN1_STRING_length(asn1_serial)) ? '\n' : ':'));
+ 	}
+ 
+ 	pre = "\n Signature Algorithm: " + GetSignatureAlgorithm(cert);
