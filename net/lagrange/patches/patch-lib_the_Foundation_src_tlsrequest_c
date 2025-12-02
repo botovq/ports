@@ -1,0 +1,14 @@
+Index: lib/the_Foundation/src/tlsrequest.c
+--- lib/the_Foundation/src/tlsrequest.c.orig
++++ lib/the_Foundation/src/tlsrequest.c
+@@ -609,8 +609,8 @@ iStringList *subjectAltNames_TlsCertificate(const iTls
+                                 (const char *) ASN1_STRING_get0_data(name->d.rfc822Name)));
+                 break;
+             case GEN_IPADD: {
+-                uint8_t *ip = name->d.iPAddress->data;
+-                if (name->d.iPAddress->length == 4) {
++                const uint8_t *ip = ASN1_STRING_get0_data(name->d.iPAddress);
++                if (ASN1_STRING_length(name->d.iPAddress) == 4) {
+                     pushBackCStr_StringList(
+                         alt, format_CStr("IP:%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]));
+                 }
