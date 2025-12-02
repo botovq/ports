@@ -1,0 +1,64 @@
+Index: plugins/sslutils.c
+--- plugins/sslutils.c.orig
++++ plugins/sslutils.c
+@@ -194,6 +194,7 @@ int np_net_ssl_check_certificate(X509 *certificate, in
+ 	X509_NAME *subj=NULL;
+ 	char timestamp[50] = "";
+ 	char cn[MAX_CN_LENGTH]= "";
++	const char *data;
+ 	char *tz;
+ 
+ 	int cnlen =-1;
+@@ -225,40 +226,41 @@ int np_net_ssl_check_certificate(X509 *certificate, in
+ 
+ 	/* Retrieve timestamp of certificate */
+ 	tm = X509_get_notAfter(certificate);
++	data = (const char *)ASN1_STRING_get0_data(tm);
+ 
+ 	/* Generate tm structure to process timestamp */
+-	if (tm->type == V_ASN1_UTCTIME) {
+-		if (tm->length < 10) {
++	if (ASN1_STRING_type(tm) == V_ASN1_UTCTIME) {
++		if (ASN1_STRING_length(tm) < 10) {
+ 			printf("%s\n", _("CRITICAL - Wrong time format in certificate."));
+ 			return STATE_CRITICAL;
+ 		} else {
+-			stamp.tm_year = (tm->data[0] - '0') * 10 + (tm->data[1] - '0');
++			stamp.tm_year = (data[0] - '0') * 10 + (data[1] - '0');
+ 			if (stamp.tm_year < 50)
+ 				stamp.tm_year += 100;
+ 			offset = 0;
+ 		}
+ 	} else {
+-		if (tm->length < 12) {
++		if (ASN1_STRING_length(tm) < 12) {
+ 			printf("%s\n", _("CRITICAL - Wrong time format in certificate."));
+ 			return STATE_CRITICAL;
+ 		} else {
+ 			stamp.tm_year =
+-				(tm->data[0] - '0') * 1000 + (tm->data[1] - '0') * 100 +
+-				(tm->data[2] - '0') * 10 + (tm->data[3] - '0');
++				(data[0] - '0') * 1000 + (data[1] - '0') * 100 +
++				(data[2] - '0') * 10 + (data[3] - '0');
+ 			stamp.tm_year -= 1900;
+ 			offset = 2;
+ 		}
+ 	}
+ 	stamp.tm_mon =
+-		(tm->data[2 + offset] - '0') * 10 + (tm->data[3 + offset] - '0') - 1;
++		(data[2 + offset] - '0') * 10 + (data[3 + offset] - '0') - 1;
+ 	stamp.tm_mday =
+-		(tm->data[4 + offset] - '0') * 10 + (tm->data[5 + offset] - '0');
++		(data[4 + offset] - '0') * 10 + (data[5 + offset] - '0');
+ 	stamp.tm_hour =
+-		(tm->data[6 + offset] - '0') * 10 + (tm->data[7 + offset] - '0');
++		(data[6 + offset] - '0') * 10 + (data[7 + offset] - '0');
+ 	stamp.tm_min =
+-		(tm->data[8 + offset] - '0') * 10 + (tm->data[9 + offset] - '0');
++		(data[8 + offset] - '0') * 10 + (data[9 + offset] - '0');
+ 	stamp.tm_sec =
+-		(tm->data[10 + offset] - '0') * 10 + (tm->data[11 + offset] - '0');
++		(data[10 + offset] - '0') * 10 + (data[11 + offset] - '0');
+ 	stamp.tm_isdst = -1;
+ 
+ 	tm_t = timegm(&stamp);
