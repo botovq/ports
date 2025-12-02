@@ -1,0 +1,12 @@
+Index: src/libserver/ssl_util.c
+--- src/libserver/ssl_util.c.orig
++++ src/libserver/ssl_util.c
+@@ -84,7 +84,7 @@ rspamd_ssl_quark(void)
+ 	return g_quark_from_static_string("rspamd-ssl");
+ }
+ 
+-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
++#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+ #ifndef X509_get_notBefore
+ #define X509_get_notBefore(x) X509_get0_notBefore(x)
+ #endif

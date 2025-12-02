@@ -1,0 +1,27 @@
+Index: src/libmime/mime_parser.c
+--- src/libmime/mime_parser.c.orig
++++ src/libmime/mime_parser.c
+@@ -892,18 +892,18 @@ rspamd_mime_parse_normal_part(struct rspamd_task *task
+ 
+ 							msg_debug_mime("found an additional part inside of "
+ 										   "smime structure of type %T/%T; length=%d",
+-										   &ct->type, &ct->subtype, p7_signed_content->d.data->length);
++										   &ct->type, &ct->subtype, ASN1_STRING_length(p7_signed_content->d.data));
+ 							/*
+ 							 * Since ASN.1 structures are freed, we need to copy
+ 							 * the content
+ 							 */
+ 							char *cpy = rspamd_mempool_alloc(task->task_pool,
+-															 p7_signed_content->d.data->length);
+-							memcpy(cpy, p7_signed_content->d.data->data,
+-								   p7_signed_content->d.data->length);
++															 ASN1_STRING_length(p7_signed_content->d.data));
++							memcpy(cpy, ASN1_STRING_get0_data(p7_signed_content->d.data),
++								    ASN1_STRING_length(p7_signed_content->d.data));
+ 							ret = rspamd_mime_process_multipart_node(task,
+ 																	 st, NULL,
+-																	 cpy, cpy + p7_signed_content->d.data->length,
++																	 cpy, cpy + ASN1_STRING_length(p7_signed_content->d.data),
+ 																	 TRUE, err);
+ 
+ 							PKCS7_free(p7);
