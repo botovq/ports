@@ -1,0 +1,38 @@
+Add compat stuff for RSAerr and SSLerr
+Convert to X509_STORE_get1_objects(), which is safer
+
+Index: src/openvpn/ssl_openssl.c
+--- src/openvpn/ssl_openssl.c.orig
++++ src/openvpn/ssl_openssl.c
+@@ -64,6 +64,13 @@
+ #include <openssl/ec.h>
+ #endif
+ 
++#ifndef RSAerr
++#define RSAerr(f, r) ERR_PUT_error(ERR_R_RSA_LIB, (f), (r), __FILE__, __LINE__)
++#endif
++#ifndef SSLerr
++#define SSLerr(f, r) ERR_PUT_error(ERR_R_SSL_LIB, (f), (r), __FILE__, __LINE__)
++#endif
++
+ #if defined(_MSC_VER) && !defined(_M_ARM64)
+ #include <openssl/applink.c>
+ #endif
+@@ -1099,7 +1106,7 @@ backend_tls_ctx_reload_crl(struct tls_root_ctx *ssl_ct
+     /* Always start with a cleared CRL list, for that we
+      * we need to manually find the CRL object from the stack
+      * and remove it */
+-    STACK_OF(X509_OBJECT) *objs = X509_STORE_get0_objects(store);
++    STACK_OF(X509_OBJECT) *objs = X509_STORE_get1_objects(store);
+     for (int i = 0; i < sk_X509_OBJECT_num(objs); i++)
+     {
+         X509_OBJECT *obj = sk_X509_OBJECT_value(objs, i);
+@@ -1110,6 +1117,8 @@ backend_tls_ctx_reload_crl(struct tls_root_ctx *ssl_ct
+             X509_OBJECT_free(obj);
+         }
+     }
++    sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
++    objs = NULL;
+ 
+     X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
+ 

@@ -1,0 +1,23 @@
+Index: src/openvpn/ssl_verify_openssl.c
+--- src/openvpn/ssl_verify_openssl.c.orig
++++ src/openvpn/ssl_verify_openssl.c
+@@ -799,16 +799,18 @@ tls_verify_crl_missing(const struct tls_options *opt)
+         crypto_msg(M_FATAL, "Cannot get certificate store");
+     }
+ 
+-    STACK_OF(X509_OBJECT) *objs = X509_STORE_get0_objects(store);
++    STACK_OF(X509_OBJECT) *objs = X509_STORE_get1_objects(store);
+     for (int i = 0; i < sk_X509_OBJECT_num(objs); i++)
+     {
+         X509_OBJECT *obj = sk_X509_OBJECT_value(objs, i);
+         ASSERT(obj);
+         if (X509_OBJECT_get_type(obj) == X509_LU_CRL)
+         {
++            sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
+             return false;
+         }
+     }
++    sk_X509_OBJECT_pop_free(objs, X509_OBJECT_free);
+     return true;
+ }
+ 
