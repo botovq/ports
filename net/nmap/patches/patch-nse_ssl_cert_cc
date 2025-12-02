@@ -10,3 +10,58 @@ Index: nse_ssl_cert.cc
  /* Technically some of these things were added in 0x10100006
   * but that was pre-release. */
  #define HAVE_OPAQUE_STRUCTS 1
+@@ -206,7 +206,7 @@ static void x509_name_to_table(lua_State *L, X509_NAME
+     value = X509_NAME_ENTRY_get_data(entry);
+ 
+     obj_to_key(L, obj);
+-    lua_pushlstring(L, (const char *) value->data, value->length);
++    lua_pushlstring(L, (const char *) ASN1_STRING_get0_data(value), ASN1_STRING_length(value));
+ 
+     lua_settable(L, -3);
+   }
+@@ -295,13 +295,15 @@ static int parse_int(const unsigned char *s, size_t le
+ static int time_to_tm(const ASN1_TIME *t, struct tm *result)
+ {
+   const unsigned char *p;
++  int len;
+ 
+-  p = t->data;
+-  if (t->length == 13 && t->data[t->length - 1] == 'Z') {
++  p = ASN1_STRING_get0_data(t);
++  len = ASN1_STRING_length(t);
++  if (len == 13 && p[len - 1] == 'Z') {
+     /* yymmddhhmmssZ */
+     int year;
+ 
+-    year = parse_int(t->data, 2);
++    year = parse_int(p, 2);
+     if (year < 0)
+       return -1;
+     /* "In coming up with the worlds least efficient machine-readable time
+@@ -314,13 +316,13 @@ static int time_to_tm(const ASN1_TIME *t, struct tm *r
+       result->tm_year = 2000 + year;
+     else
+       result->tm_year = 1900 + year;
+-    p = t->data + 2;
+-  } else if (t->length == 15 && t->data[t->length - 1] == 'Z') {
++    p += 2;
++  } else if (len == 15 && p[len - 1] == 'Z') {
+     /* yyyymmddhhmmssZ */
+-    result->tm_year = parse_int(t->data, 4);
++    result->tm_year = parse_int(p, 4);
+     if (result->tm_year < 0)
+       return -1;
+-    p = t->data + 4;
++    p += 4;
+   } else {
+     return -1;
+   }
+@@ -381,7 +383,7 @@ static void asn1_time_to_obj(lua_State *L, const ASN1_
+   } else if (time_to_tm(s, &tm) == 0) {
+       tm_to_table(L, &tm);
+   } else {
+-      lua_pushlstring(L, (const char *) s->data, s->length);
++      lua_pushlstring(L, (const char *) ASN1_STRING_get0_data(s), ASN1_STRING_length(s));
+   }
+ }
+ 
