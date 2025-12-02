@@ -1,0 +1,21 @@
+Index: src/rtc_base/openssl_certificate.cc
+--- src/rtc_base/openssl_certificate.cc.orig
++++ src/rtc_base/openssl_certificate.cc
+@@ -277,14 +277,14 @@ bool OpenSSLCertificate::operator!=(const OpenSSLCerti
+ int64_t OpenSSLCertificate::CertificateExpirationTime() const {
+   ASN1_TIME* expire_time = X509_get_notAfter(x509_);
+   bool long_format;
+-  if (expire_time->type == V_ASN1_UTCTIME) {
++  if (ASN1_STRING_type(expire_time) == V_ASN1_UTCTIME) {
+     long_format = false;
+-  } else if (expire_time->type == V_ASN1_GENERALIZEDTIME) {
++  } else if (ASN1_STRING_type(expire_time) == V_ASN1_GENERALIZEDTIME) {
+     long_format = true;
+   } else {
+     return -1;
+   }
+-  return ASN1TimeToSec(expire_time->data, expire_time->length, long_format);
++  return ASN1TimeToSec(ASN1_STRING_get0_data(expire_time), ASN1_STRING_length(expire_time), long_format);
+ }
+ 
+ }  // namespace rtc
