@@ -1,0 +1,12 @@
+Index: src/tls/tls_fprint.c
+--- src/tls/tls_fprint.c.orig
++++ src/tls/tls_fprint.c
+@@ -390,7 +390,7 @@ char   *tls_pkey_fprint(X509 *peercert, const char *md
+ 	    msg_fatal("%s: error extracting legacy public-key fingerprint: %m",
+ 		      myname);
+ 
+-	result = tls_data_fprint((char *) key->data, key->length, mdalg);
++	result = tls_data_fprint((const char *) ASN1_STRING_get0_data(key), ASN1_STRING_length(key), mdalg);
+ 	return (result);
+     } else {
+ 	int     len;
