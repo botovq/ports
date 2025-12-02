@@ -1,0 +1,17 @@
+Index: mutt_ssl.c
+--- mutt_ssl.c.orig
++++ mutt_ssl.c
+@@ -1046,10 +1046,10 @@ static int check_host (X509 *x509cert, const char *hos
+       subj_alt_name = sk_GENERAL_NAME_value(subj_alt_names, i);
+       if (subj_alt_name->type == GEN_DNS)
+       {
+-	if (subj_alt_name->d.ia5->length >= 0 &&
+-	    mutt_strlen((char *)subj_alt_name->d.ia5->data) == (size_t)subj_alt_name->d.ia5->length &&
++	if (ASN1_STRING_length(subj_alt_name->d.ia5) >= 0 &&
++	    mutt_strlen((const char *)ASN1_STRING_get0_data(subj_alt_name->d.ia5)) == (size_t)ASN1_STRING_length(subj_alt_name->d.ia5) &&
+ 	    (match_found = hostname_match(hostname_ascii,
+-					  (char *)(subj_alt_name->d.ia5->data))))
++					  (const char *)(ASN1_STRING_get0_data(subj_alt_name->d.ia5)))))
+ 	{
+ 	  break;
+ 	}
