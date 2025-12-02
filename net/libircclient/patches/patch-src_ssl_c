@@ -1,7 +1,27 @@
 Index: src/ssl.c
 --- src/ssl.c.orig
 +++ src/ssl.c
-@@ -127,9 +127,10 @@ static int ssl_init_context( irc_session_t * session )
+@@ -74,11 +74,6 @@ static void cb_openssl_locking_function( int mode, int
+ 
+ // OpenSSL callback to get the thread ID
+ 
+-static void cb_openssl_id_function( CRYPTO_THREADID * id )
+-{
+-	CRYPTO_THREADID_set_pointer( id, pthread_self() );
+-}
+-
+ static int alloc_mutexes( unsigned int total )
+ {
+ 	unsigned i;
+@@ -107,7 +102,6 @@ static int ssl_init_context( irc_session_t * session )
+ 		return LIBIRC_ERR_NOMEM;
+ 
+ 	// Register our callbacks
+-	CRYPTO_THREADID_set_callback( cb_openssl_id_function );
+ 	CRYPTO_set_locking_callback( cb_openssl_locking_function );
+ 
+ 	// Init it
+@@ -127,9 +121,10 @@ static int ssl_init_context( irc_session_t * session )
  		return LIBIRC_ERR_SSL_INIT_FAILED;
  
  	// Disable SSLv2 as it is unsecure
