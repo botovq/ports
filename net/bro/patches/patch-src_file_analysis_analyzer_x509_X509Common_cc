@@ -1,0 +1,50 @@
+Index: src/file_analysis/analyzer/x509/X509Common.cc
+--- src/file_analysis/analyzer/x509/X509Common.cc.orig
++++ src/file_analysis/analyzer/x509/X509Common.cc
+@@ -31,10 +31,10 @@ double X509Common::GetTimeFromAsn1(const ASN1_TIME* at
+     char lBuffer[26];
+     char* pBuffer = lBuffer;
+ 
+-    const char* pString = (const char*)atime->data;
+-    unsigned int remaining = atime->length;
++    const char* pString = (const char*)ASN1_STRING_get0_data(atime);
++    unsigned int remaining = ASN1_STRING_length(atime);
+ 
+-    if ( atime->type == V_ASN1_UTCTIME ) {
++    if ( ASN1_STRING_type(atime) == V_ASN1_UTCTIME ) {
+         if ( remaining < 11 || remaining > 17 ) {
+             EmitWeird("x509_utc_length", f);
+             return 0;
+@@ -62,7 +62,7 @@ double X509Common::GetTimeFromAsn1(const ASN1_TIME* at
+         pString += 10;
+         remaining -= 10;
+     }
+-    else if ( atime->type == V_ASN1_GENERALIZEDTIME ) {
++    else if ( ASN1_STRING_type(atime) == V_ASN1_GENERALIZEDTIME ) {
+         // generalized time. We apparently ignore the YYYYMMDDHH case
+         // for now and assume we always have minutes and seconds.
+         // This should be ok because it is specified as a requirement in RFC 2459 4.1.2.5.2
+@@ -176,11 +176,11 @@ void X509Common::ParseSignedCertificateTimestamps(X509
+     // the octet string of the extension contains the octet string which in turn
+     // contains the SCT. Obviously.
+ 
+-    unsigned char* ext_val_copy = (unsigned char*)OPENSSL_malloc(ext_val->length);
++    unsigned char* ext_val_copy = (unsigned char*)OPENSSL_malloc(ASN1_STRING_length(ext_val));
+     unsigned char* ext_val_second_pointer = ext_val_copy;
+-    memcpy(ext_val_copy, ext_val->data, ext_val->length);
++    memcpy(ext_val_copy, ASN1_STRING_get0_data(ext_val), ASN1_STRING_length(ext_val));
+ 
+-    ASN1_OCTET_STRING* inner = d2i_ASN1_OCTET_STRING(nullptr, (const unsigned char**)&ext_val_copy, ext_val->length);
++    ASN1_OCTET_STRING* inner = d2i_ASN1_OCTET_STRING(nullptr, (const unsigned char**)&ext_val_copy, ASN1_STRING_length(ext_val));
+     if ( ! inner ) {
+         OPENSSL_free(ext_val_second_pointer);
+         reporter->Error("X509::ParseSignedCertificateTimestamps could not parse inner octet string");
+@@ -191,7 +191,7 @@ void X509Common::ParseSignedCertificateTimestamps(X509
+     binpac::X509Extension::SignedCertTimestampExt* interp = new binpac::X509Extension::SignedCertTimestampExt(conn);
+ 
+     try {
+-        interp->NewData(inner->data, inner->data + inner->length);
++        interp->NewData(ASN1_STRING_get0_data(inner), ASN1_STRING_get0_data(inner) + ASN1_STRING_length(inner));
+     } catch ( const binpac::Exception& e ) {
+         // throw a warning or sth
+         reporter->Error("X509::ParseSignedCertificateTimestamps could not parse SCT");

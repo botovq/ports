@@ -1,0 +1,33 @@
+Index: src/file_analysis/analyzer/x509/X509.cc
+--- src/file_analysis/analyzer/x509/X509.cc.orig
++++ src/file_analysis/analyzer/x509/X509.cc
+@@ -349,7 +349,7 @@ void X509::ParseSAN(X509_EXTENSION* ext) {
+             }
+ 
+             auto len = ASN1_STRING_length(gen->d.ia5);
+-#if ( OPENSSL_VERSION_NUMBER < 0x10100000L ) || defined(LIBRESSL_VERSION_NUMBER)
++#if ( OPENSSL_VERSION_NUMBER < 0x10100000L )
+             const char* name = (const char*)ASN1_STRING_data(gen->d.ia5);
+ #else
+             const char* name = (const char*)ASN1_STRING_get0_data(gen->d.ia5);
+@@ -386,16 +386,16 @@ void X509::ParseSAN(X509_EXTENSION* ext) {
+             if ( ips == nullptr )
+                 ips = make_intrusive<VectorVal>(id::find_type<VectorType>("addr_vec"));
+ 
+-            uint32_t* addr = (uint32_t*)gen->d.ip->data;
++            const uint32_t* addr = (const uint32_t*)ASN1_STRING_get0_data(gen->d.ip);
+ 
+-            if ( gen->d.ip->length == 4 )
++            if ( ASN1_STRING_length(gen->d.ip) == 4 )
+                 ips->Assign(ips->Size(), make_intrusive<AddrVal>(*addr));
+ 
+-            else if ( gen->d.ip->length == 16 )
++            else if ( ASN1_STRING_length(gen->d.ip) == 16 )
+                 ips->Assign(ips->Size(), make_intrusive<AddrVal>(addr));
+ 
+             else {
+-                reporter->Weird(GetFile(), "x509_san_ip_length", util::fmt("%d", gen->d.ip->length));
++                reporter->Weird(GetFile(), "x509_san_ip_length", util::fmt("%d", ASN1_STRING_length(gen->d.ip)));
+                 continue;
+             }
+         }
