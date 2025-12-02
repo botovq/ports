@@ -21,3 +21,36 @@ Index: Pdf4QtLibCore/sources/pdfsignaturehandler.cpp
              TS_VERIFY_CTX_set_data(ts_context, inputBuffer);
              TS_VERIFY_CTX_set_flags(ts_context, TS_VFY_ALL_DATA & ~TS_VFY_POLICY & ~TS_VFY_NONCE & ~TS_VFY_TSA_NAME);
              TS_VERIFY_CTX_set_store(ts_context, store);
+@@ -1303,7 +1300,7 @@ bool PDFSignatureHandler_adbe_pkcs7_rsa_sha1::getMessa
+ 
+     int size = RSA_size(rsa);
+     std::vector<unsigned char> decryptedBuffer(size, 0);
+-    const int signatureSize = RSA_public_decrypt(encryptedString->length, encryptedString->data, decryptedBuffer.data(), rsa, RSA_PKCS1_PADDING);
++    const int signatureSize = RSA_public_decrypt(ASN1_STRING_length(encryptedString), ASN1_STRING_get0_data(encryptedString), decryptedBuffer.data(), rsa, RSA_PKCS1_PADDING);
+ 
+     if (signatureSize <= 0)
+     {
+@@ -1502,7 +1499,7 @@ void PDFSignatureHandler_adbe_pkcs7_rsa_sha1::verifyRS
+             OBJ_obj2txt(buffer.data(), int(buffer.size() - 1), OBJ_nid2obj(algorithmNID), 0);
+             result.addHashAlgorithm(QString::fromLatin1(buffer.data()));
+ 
+-            const int verifyValue = RSA_verify(algorithmNID, digest, digestLength, encryptedString->data, encryptedString->length, rsa.get());
++            const int verifyValue = RSA_verify(algorithmNID, digest, digestLength, ASN1_STRING_get0_data(encryptedString.get()), ASN1_STRING_length(encryptedString.get()), rsa.get());
+ 
+             if (verifyValue == 0)
+             {
+@@ -1627,10 +1624,12 @@ void PDFPublicKeySignatureHandler::addHashAlgorithmFro
+     for (int i = 0; i < count; ++i)
+     {
+         PKCS7_SIGNER_INFO* signerInfoValue = sk_PKCS7_SIGNER_INFO_value(signerInfoStack, i);
+-        if (signerInfoValue && signerInfoValue->digest_alg && signerInfoValue->digest_alg->algorithm)
++        const ASN1_OBJECT *aobj = NULL;
++        X509_ALGOR_get0(&aobj, NULL, NULL, signerInfoValue->digest_alg);
++        if (aobj)
+         {
+             std::array<char, 64> buffer = { };
+-            OBJ_obj2txt(buffer.data(), int(buffer.size() - 1), signerInfoValue->digest_alg->algorithm, 0);
++            OBJ_obj2txt(buffer.data(), int(buffer.size() - 1), aobj, 0);
+             result.addHashAlgorithm(QString::fromLatin1(buffer.data()));
+         }
+     }
