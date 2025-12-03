@@ -13,7 +13,35 @@ Index: ssl.c
  int
  DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
  {
-@@ -598,7 +598,7 @@ ssl_ssl_masterkey_to_str(SSL *ssl)
+@@ -344,11 +344,6 @@ ssl_thr_id_cb(void) {
+ /*
+  * OpenSSL thread-safety thread ID callback, up-to-date version.
+  */
+-static void
+-ssl_thr_id_cb(CRYPTO_THREADID *id)
+-{
+-	CRYPTO_THREADID_set_numeric(id, (unsigned long) pthread_self());
+-}
+ #endif /* !OPENSSL_NO_THREADID */
+ #endif /* OPENSSL_THREADS */
+ 
+@@ -406,7 +401,6 @@ ssl_init(void)
+ #ifdef OPENSSL_NO_THREADID
+ 	CRYPTO_set_id_callback(ssl_thr_id_cb);
+ #else /* !OPENSSL_NO_THREADID */
+-	CRYPTO_THREADID_set_callback(ssl_thr_id_cb);
+ #endif /* !OPENSSL_NO_THREADID */
+ #endif /* OPENSSL_THREADS && OPENSSL_VERSION_NUMBER < 0x10100000L */
+ 
+@@ -493,7 +487,6 @@ ssl_fini(void)
+ #ifdef OPENSSL_NO_THREADID
+ 	CRYPTO_set_id_callback(NULL);
+ #else /* !OPENSSL_NO_THREADID */
+-	CRYPTO_THREADID_set_callback(NULL);
+ #endif /* !OPENSSL_NO_THREADID */
+ 	for (int i = 0; i < ssl_mutex_num; i++) {
+ 		pthread_mutex_destroy(&ssl_mutex[i]);
+@@ -598,7 +591,7 @@ ssl_ssl_masterkey_to_str(SSL *ssl)
  	char *str = NULL;
  	int rv;
  	unsigned char *k, *r;
@@ -22,7 +50,7 @@ Index: ssl.c
  	unsigned char kbuf[48], rbuf[32];
  	k = &kbuf[0];
  	r = &rbuf[0];
-@@ -1500,7 +1500,7 @@ ssl_x509_fingerprint(X509 *crt, int colons)
+@@ -1500,7 +1493,7 @@ ssl_x509_fingerprint(X509 *crt, int colons)
  void
  ssl_dh_refcount_inc(DH *dh)
  {
@@ -31,7 +59,7 @@ Index: ssl.c
  	CRYPTO_add(&dh->references, 1, CRYPTO_LOCK_DH);
  #else /* !OPENSSL_THREADS */
  	DH_up_ref(dh);
-@@ -1515,7 +1515,7 @@ ssl_dh_refcount_inc(DH *dh)
+@@ -1515,7 +1508,7 @@ ssl_dh_refcount_inc(DH *dh)
  void
  ssl_key_refcount_inc(EVP_PKEY *key)
  {
@@ -40,7 +68,7 @@ Index: ssl.c
  	CRYPTO_add(&key->references, 1, CRYPTO_LOCK_EVP_PKEY);
  #else /* !OPENSSL_THREADS */
  	EVP_PKEY_up_ref(key);
-@@ -1530,7 +1530,7 @@ ssl_key_refcount_inc(EVP_PKEY *key)
+@@ -1530,7 +1523,7 @@ ssl_key_refcount_inc(EVP_PKEY *key)
  void
  ssl_x509_refcount_inc(X509 *crt)
  {
@@ -49,3 +77,24 @@ Index: ssl.c
  	CRYPTO_add(&crt->references, 1, CRYPTO_LOCK_X509);
  #else /* !OPENSSL_THREADS */
  	X509_up_ref(crt);
+@@ -1778,14 +1771,16 @@ static char *
+ ssl_ia5string_strdup(ASN1_IA5STRING *ia5)
+ {
+ 	char *str;
++	const unsigned char *data = ASN1_STRING_get0_data(ia5);
++	int length = ASN1_STRING_length(ia5);
+ 
+-	if (!ia5 || !ia5->length)
++	if (!ia5 || !length)
+ 		return NULL;
+-	str = malloc(ia5->length + 1);
++	str = malloc(length + 1);
+ 	if (!str)
+ 		return NULL;
+-	memcpy(str, ia5->data, ia5->length);
+-	str[ia5->length] = 0;
++	memcpy(str, data, length);
++	str[length] = 0;
+ 	return str;
+ }
+ 
