@@ -1,0 +1,28 @@
+Index: ssl/sslxprint.c
+--- ssl/sslxprint.c.orig
++++ ssl/sslxprint.c
+@@ -116,9 +116,9 @@ int sslx_print_certificate(ssl_obj *ssl, Data *data, i
+     INDENT_POP;
+     a = X509_get_serialNumber(x);
+     explain(ssl, "Serial ");
+-    if(!(serial_str = (char *)calloc(1, sizeof(char) * (a->length * 3))))
++    if(!(serial_str = calloc(3, ASN1_STRING_length(a))))
+       ABORT(R_NO_MEMORY);
+-    INIT_DATA(data_tmp, a->data, a->length);
++    INIT_DATA(data_tmp, (UCHAR *)ASN1_STRING_get0_data(a), ASN1_STRING_length(a));
+     exstr(ssl, serial_str, &data_tmp);
+     json_object_object_add(cert_obj, "cert_serial",
+                            json_object_new_string(serial_str));
+@@ -240,10 +240,10 @@ static int sslx__print_dn(ssl_obj *ssl, char *x) {
+ static int sslx__print_serial(ssl_obj *ssl, ASN1_INTEGER *a) {
+   Data d;
+ 
+-  if(a->length == 0)
++  if(ASN1_STRING_length(a) == 0)
+     printf("0");
+ 
+-  INIT_DATA(d, a->data, a->length);
++  INIT_DATA(d, (UCHAR *)ASN1_STRING_get0_data(a), ASN1_STRING_length(a));
+   exdump(ssl, 0, &d);
+ 
+   return 0;
