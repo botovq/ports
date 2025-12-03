@@ -28,3 +28,12 @@ Index: src/core/network-openssl.c
  
  			tls_cert_entry_rec = tls_cert_entry_create_rec(key, value);
  			tls_cert_rec_append_subject_entry(cert_rec, tls_cert_entry_rec);
+@@ -736,7 +736,7 @@ static void set_peer_cert_chain_info(TLS_REC *tls, SSL
+ 				key = (char *)OBJ_nid2ln(nid);
+ 
+ 			data = X509_NAME_ENTRY_get_data(entry);
+-			value = (char *)ASN1_STRING_data(data);
++			value = (const char *)ASN1_STRING_get0_data(data);
+ 
+ 			tls_cert_entry_rec = tls_cert_entry_create_rec(key, value);
+ 			tls_cert_rec_append_issuer_entry(cert_rec, tls_cert_entry_rec);
