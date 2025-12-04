@@ -1,5 +1,6 @@
---- SSLeay.xs.orig	Thu Apr 24 00:36:24 2014
-+++ SSLeay.xs	Mon Aug 31 00:43:25 2015
+Index: SSLeay.xs
+--- SSLeay.xs.orig
++++ SSLeay.xs
 @@ -45,13 +45,6 @@ extern "C" {
  }
  #endif
@@ -38,3 +39,21 @@
          SSL_CTX_set_options(ctx,SSL_OP_ALL|0);
          SSL_CTX_set_default_verify_paths(ctx);
          SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+@@ -513,7 +491,7 @@ char *
+ get_notBeforeString(cert)
+          X509* cert
+          CODE:
+-            RETVAL = (char *)X509_get_notBefore(cert)->data;
++            RETVAL = (char *)ASN1_STRING_get0_data(X509_get_notBefore(cert)); /* XXX */
+          OUTPUT:
+             RETVAL
+ 
+@@ -521,7 +499,7 @@ char *
+ get_notAfterString(cert)
+          X509* cert
+          CODE:
+-            RETVAL = (char *)X509_get_notAfter(cert)->data;
++            RETVAL = (char *)ASN1_STRING_get0_data(X509_get_notAfter(cert)); /* XXX */
+          OUTPUT:
+             RETVAL
+ 
