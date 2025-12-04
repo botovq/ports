@@ -1,0 +1,27 @@
+Index: libyara/modules/pe/pe_utils.c
+--- libyara/modules/pe/pe_utils.c.orig
++++ libyara/modules/pe/pe_utils.c
+@@ -261,12 +261,12 @@ time_t timegm(struct tm* tm)
+ time_t ASN1_get_time_t(const ASN1_TIME* time)
+ {
+   struct tm t;
+-  const char* str = (const char*) time->data;
++  const char* str = (const char*) ASN1_STRING_get0_data(time);
+   size_t i = 0;
+ 
+   memset(&t, 0, sizeof(t));
+ 
+-  if (time->type == V_ASN1_UTCTIME) /* two digit year */
++  if (ASN1_STRING_type(time) == V_ASN1_UTCTIME) /* two digit year */
+   {
+     t.tm_year = (str[i++] - '0') * 10;
+     t.tm_year += (str[i++] - '0');
+@@ -274,7 +274,7 @@ time_t ASN1_get_time_t(const ASN1_TIME* time)
+     if (t.tm_year < 70)
+       t.tm_year += 100;
+   }
+-  else if (time->type == V_ASN1_GENERALIZEDTIME) /* four digit year */
++  else if (ASN1_STRING_type(time) == V_ASN1_GENERALIZEDTIME) /* four digit year */
+   {
+     t.tm_year = (str[i++] - '0') * 1000;
+     t.tm_year += (str[i++] - '0') * 100;
