@@ -1,0 +1,15 @@
+Index: client/SslCertificate.cpp
+--- client/SslCertificate.cpp.orig
++++ client/SslCertificate.cpp
+@@ -237,8 +237,10 @@ QString SslCertificate::signatureAlgorithm() const
+ 		return {};
+ 	const X509_ALGOR *algo = nullptr;
+ 	X509_get0_signature(nullptr, &algo, (X509*)handle());
++	const ASN1_OBJECT *oid = nullptr;
++	X509_ALGOR_get0(&oid, NULL, NULL, algo);
+ 	QByteArray buf(50, 0);
+-	i2t_ASN1_OBJECT(buf.data(), buf.size(), algo->algorithm);
++	i2t_ASN1_OBJECT(buf.data(), buf.size(), oid);
+ 	return buf;
+ }
+ 
