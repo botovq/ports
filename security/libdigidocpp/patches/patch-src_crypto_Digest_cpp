@@ -1,0 +1,14 @@
+Index: src/crypto/Digest.cpp
+--- src/crypto/Digest.cpp.orig
++++ src/crypto/Digest.cpp
+@@ -85,7 +85,9 @@ string Digest::digestInfoUri(const std::vector<unsigne
+         return {};
+     const X509_ALGOR *algor {};
+     X509_SIG_get0(sig.get(), &algor, nullptr);
+-    return toUri(OBJ_obj2nid(algor->algorithm));
++    const ASN1_OBJECT *obj {};
++    X509_ALGOR_get0(&obj, nullptr, nullptr, algor);
++    return toUri(OBJ_obj2nid(obj));
+ }
+ 
+ /**

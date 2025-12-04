@@ -1,0 +1,17 @@
+Index: src/crypto/TS.cpp
+--- src/crypto/TS.cpp.orig
++++ src/crypto/TS.cpp
+@@ -187,8 +187,11 @@ string TS::digestMethod() const
+     auto info = tstInfo();
+     if(!info)
+         return {};
+-    if(X509_ALGOR *algo = TS_MSG_IMPRINT_get_algo(TS_TST_INFO_get_msg_imprint(info.get())))
+-        return Digest::toUri(OBJ_obj2nid(algo->algorithm));
++    if(X509_ALGOR *algo = TS_MSG_IMPRINT_get_algo(TS_TST_INFO_get_msg_imprint(info.get()))) {
++        const ASN1_OBJECT *obj = nullptr;
++        X509_ALGOR_get0(&obj, nullptr, nullptr, algo);
++        return Digest::toUri(OBJ_obj2nid(obj));
++    }
+     return {};
+ }
+ 

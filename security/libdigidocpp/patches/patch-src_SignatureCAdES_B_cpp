@@ -1,0 +1,15 @@
+Index: src/SignatureCAdES_B.cpp
+--- src/SignatureCAdES_B.cpp.orig
++++ src/SignatureCAdES_B.cpp
+@@ -137,8 +137,10 @@ void SignatureCAdES_B::sign()
+ string SignatureCAdES_B::signatureMethod() const
+ {
+     X509_ALGOR *dig = nullptr;
++    const ASN1_OBJECT *dig_obj = nullptr;
+     CMS_SignerInfo_get0_algs(d->si, nullptr, nullptr, &dig, nullptr);
+-    switch(OBJ_obj2nid(dig->algorithm))
++    X509_ALGOR_get0(&dig_obj, nullptr, nullptr, dig);
++    switch(OBJ_obj2nid(dig_obj))
+     {
+     case NID_sha1:  return URI_SHA1;
+     case NID_sha224: return URI_SHA224;
