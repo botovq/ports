@@ -93,7 +93,7 @@ Index: src/keymgr_openssl.c
  
  	if (!X509_REQ_add_extensions(csr, sk))
  		fatalx("X509_REQ_add_extensions(): %s", ssl_errno_s);
-@@ -1217,26 +1211,74 @@ keymgr_acme_csr(const struct kore_keyreq *req, struct 
+@@ -1217,28 +1211,76 @@ keymgr_acme_csr(const struct kore_keyreq *req, struct 
  }
  
  static void
@@ -144,8 +144,8 @@ Index: src/keymgr_openssl.c
 +
 +	if (!sk_X509_EXTENSION_push(sk, ext))
 +		fatalx("sk_X509_EXTENSION_push(): %s", ssl_errno_s);
-+}
-+
+ }
+ 
 +static void
 +keymgr_x509_ext_acme_id(STACK_OF(X509_EXTENSION) *sk, const void *data,
 +    size_t len)
@@ -179,6 +179,64 @@ Index: src/keymgr_openssl.c
 +
 +	if (!sk_X509_EXTENSION_push(sk, ext))
 +		fatalx("sk_X509_EXTENSION_push(): %s", ssl_errno_s);
- }
- 
++}
++
  static char *
+ keymgr_bignum_base64(const BIGNUM *bn)
+ {
+@@ -1271,16 +1313,16 @@ keymgr_x509_not_after(X509 *x509, time_t *out)
+ 		return (KORE_RESULT_ERROR);
+ 	}
+ 
+-	switch (na->type) {
++	switch (ASN1_STRING_type(na)) {
+ 	case V_ASN1_UTCTIME:
+ 		ret = keymgr_asn1_convert_utctime(na, out);
+ 		break;
+ 	case V_ASN1_GENERALIZEDTIME:
+-		ret = keymgr_asn1_convert_generalizedtime(na->data,
+-		    na->length, out);
++		ret = keymgr_asn1_convert_generalizedtime(ASN1_STRING_get0_data(na),
++		    ASN1_STRING_length(na), out);
+ 		break;
+ 	default:
+-		kore_log(LOG_ERR, "invalid notAfter type (%d)", na->type);
++		kore_log(LOG_ERR, "invalid notAfter type (%d)", ASN1_STRING_type(na));
+ 		break;
+ 	}
+ 
+@@ -1291,20 +1333,21 @@ static int
+ keymgr_asn1_convert_utctime(const ASN1_TIME *na, time_t *out)
+ {
+ 	int	len, year;
++	const unsigned char *data = ASN1_STRING_get0_data(na);
+ 	char	buf[ASN1_GENERALIZEDTIME_LEN + 1];
+ 
+-	if (na->length != ASN1_UTCTIME_LEN) {
++	if (ASN1_STRING_length(na) != ASN1_UTCTIME_LEN) {
+ 		kore_log(LOG_ERR, "invalid UTCTIME: too short (%d)",
+-		    na->length);
++		    ASN1_STRING_length(na));
+ 		return (KORE_RESULT_ERROR);
+ 	}
+ 
+-	if (!isdigit(na->data[0]) || !isdigit(na->data[1])) {
++	if (!isdigit(data[0]) || !isdigit(data[1])) {
+ 		kore_log(LOG_ERR, "invalid UTCTIME: YY are not digits");
+ 		return (KORE_RESULT_ERROR);
+ 	}
+ 
+-	year = (na->data[0] - '0') * 10 + (na->data[1] - '0');
++	year = (data[0] - '0') * 10 + (data[1] - '0');
+ 
+ 	/* RFC 5280 says years >= 50 are interpreted as 19YY */
+ 	if (year >= 50)
+@@ -1314,7 +1357,7 @@ keymgr_asn1_convert_utctime(const ASN1_TIME *na, time_
+ 
+ 	/* Convert it to GENERALIZEDTIME format and call that parser. */
+ 	len = snprintf(buf, sizeof(buf), "%04d%.*s", year,
+-	    na->length - 2, (const char *)na->data+ 2);
++	    ASN1_STRING_length(na) - 2, (const char *)data + 2);
+ 	if (len == -1 || (size_t)len >= sizeof(buf)) {
+ 		kore_log(LOG_ERR, "invalid UTCTIME: failed to convert");
+ 		return (KORE_RESULT_ERROR);
