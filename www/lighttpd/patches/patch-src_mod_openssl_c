@@ -1,0 +1,14 @@
+Index: src/mod_openssl.c
+--- src/mod_openssl.c.orig
++++ src/mod_openssl.c
+@@ -3727,8 +3727,8 @@ https_add_ssl_client_subject (request_st * const r, X5
+             if (prelen+len >= sizeof(key)) continue;
+             memcpy(key+prelen, xobjsn, len); /*(not '\0'-terminated)*/
+             http_header_env_set(r, key, prelen+len,
+-                                (const char*)X509_NAME_ENTRY_get_data(xe)->data,
+-                                X509_NAME_ENTRY_get_data(xe)->length);
++                                (const char*)ASN1_STRING_get0_data(X509_NAME_ENTRY_get_data(xe)),
++                                ASN1_STRING_length(X509_NAME_ENTRY_get_data(xe)));
+         }
+     }
+ }
