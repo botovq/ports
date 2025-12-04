@@ -10,3 +10,14 @@ Index: src/verify.c
  #define X509_STORE_CTX_get1_certs X509_STORE_get1_certs
  #endif
      /* modern API allows retrieving multiple matching certificates */
+@@ -405,8 +405,8 @@ NOEXPORT int cert_check_local(X509_STORE_CTX *callback
+ NOEXPORT int compare_pubkeys(X509 *c1, X509 *c2) {
+     ASN1_BIT_STRING *k1=X509_get0_pubkey_bitstr(c1);
+     ASN1_BIT_STRING *k2=X509_get0_pubkey_bitstr(c2);
+-    if(!k1 || !k2 || k1->length!=k2->length || k1->length<0 ||
+-            safe_memcmp(k1->data, k2->data, (size_t)k1->length))
++    if(!k1 || !k2 || ASN1_STRING_length(k1)!=ASN1_STRING_length(k2) || ASN1_STRING_length(k1) ||
++            safe_memcmp(ASN1_STRING_get0_data(k1), ASN1_STRING_get0_data(k2), (size_t)ASN1_STRING_length(k1)))
+         return 0; /* reject */
+     s_log(LOG_INFO, "CERT: Locally installed certificate matched");
+     return 1; /* accept */
