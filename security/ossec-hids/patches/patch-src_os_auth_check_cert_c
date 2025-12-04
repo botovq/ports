@@ -1,0 +1,34 @@
+Index: src/os_auth/check_cert.c
+--- src/os_auth/check_cert.c.orig
++++ src/os_auth/check_cert.c
+@@ -193,11 +193,11 @@ int check_ipaddr(const ASN1_STRING *cert_astr, const c
+     memset(&iptest6, 0, sizeof(iptest6));
+ 
+     if (inet_pton(AF_INET, manager, &iptest.sin_addr) == 1) {
+-        if (cert_astr->length == 4 && !memcmp(cert_astr->data, (const void *)&iptest.sin_addr, 4)) {
++        if (ASN1_STRING_length(cert_astr) == 4 && !memcmp(ASN1_STRING_get0_data(cert_astr), (const void *)&iptest.sin_addr, 4)) {
+             return VERIFY_TRUE;
+         }
+     } else if (inet_pton(AF_INET6, manager, &iptest6.sin6_addr) == 1) {
+-        if (cert_astr->length == 16 && !memcmp(cert_astr->data, (const void *)&iptest6.sin6_addr, 16)) {
++        if (ASN1_STRING_length(cert_astr) == 16 && !memcmp(ASN1_STRING_get0_data(cert_astr), (const void *)&iptest6.sin6_addr, 16)) {
+             return VERIFY_TRUE;
+         }
+     }
+@@ -296,14 +296,14 @@ int label_match(const label *label1, const label *labe
+ char *asn1_to_cstr(ASN1_STRING *astr)
+ {
+     unsigned int astr_len = 0;
+-    char *tmp = NULL;
++    const char *tmp = NULL;
+     char *cstr = NULL;
+ 
+     if (!(astr_len = (unsigned int) ASN1_STRING_length(astr))) {
+         return NULL;
+     }
+ 
+-    if (!(tmp = (char *)ASN1_STRING_data(astr))) {
++    if (!(tmp = (const char *)ASN1_STRING_get0_data(astr))) {
+         return NULL;
+     }
+ 
