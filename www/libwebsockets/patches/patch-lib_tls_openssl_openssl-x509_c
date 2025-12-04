@@ -1,0 +1,36 @@
+Index: lib/tls/openssl/openssl-x509.c
+--- lib/tls/openssl/openssl-x509.c.orig
++++ lib/tls/openssl/openssl-x509.c
+@@ -39,7 +39,7 @@ lws_tls_openssl_asn1time_to_unix(ASN1_TIME *as)
+ {
+ #if !defined(LWS_PLAT_OPTEE)
+ 
+-	const char *p = (const char *)as->data;
++	const char *p = (const char *)ASN1_STRING_get0_data(as);
+ 	struct tm t;
+ 
+ 	/* [YY]YYMMDDHHMMSSZ */
+@@ -215,8 +215,8 @@ lws_tls_openssl_cert_info(X509 *x509, enum lws_tls_cer
+ 		if (!akid || !akid->keyid)
+ 			return 1;
+ 		val = akid->keyid;
+-		dp = (const unsigned char *)val->data;
+-		xlen = val->length;
++		dp = (const unsigned char *)ASN1_STRING_get0_data(val);
++		xlen = ASN1_STRING_length(val);
+ 
+ 		buf->ns.len = (int)xlen;
+ 		if (len < (size_t)buf->ns.len)
+@@ -322,10 +322,10 @@ bail_ak:
+ #if defined(USE_WOLFSSL)
+ 		return 1;
+ #else
+-		dp = (const unsigned char *)val->data;
++		dp = (const unsigned char *)ASN1_STRING_get0_data(val);
+ 
+ 		if (ASN1_get_object(&dp, &xlen,
+-				    &tag, &xclass, val->length) & 0x80)
++				    &tag, &xclass, ASN1_STRING_length(val)) & 0x80)
+ 			return -1;
+ 
+ 		if (tag != V_ASN1_OCTET_STRING) {
