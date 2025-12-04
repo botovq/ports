@@ -1,0 +1,17 @@
+Index: src/LibsslTLSSession.cc
+--- src/LibsslTLSSession.cc.orig
++++ src/LibsslTLSSession.cc
+@@ -279,11 +279,11 @@ int OpenSSLTLSSession::tlsConnect(const std::string& h
+           dnsNames.push_back(std::string(name, name + len));
+         }
+         else if (altName->type == GEN_IPADD) {
+-          const unsigned char* ipAddr = altName->d.iPAddress->data;
++          const unsigned char* ipAddr = ASN1_STRING_get0_data(altName->d.iPAddress);
+           if (!ipAddr) {
+             continue;
+           }
+-          size_t len = altName->d.iPAddress->length;
++          size_t len = ASN1_STRING_length(altName->d.iPAddress);
+           ipAddrs.push_back(
+               std::string(reinterpret_cast<const char*>(ipAddr), len));
+         }
