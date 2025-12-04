@@ -1,0 +1,91 @@
+Index: src/ssl/gadgets.cc
+--- src/ssl/gadgets.cc.orig
++++ src/ssl/gadgets.cc
+@@ -301,9 +301,9 @@ static void
+ printX509Signature(const Security::CertPointer &cert, std::string &out)
+ {
+     const ASN1_BIT_STRING *sig = Ssl::X509_get_signature(cert);
+-    if (sig && sig->data) {
+-        const unsigned char *s = sig->data;
+-        for (int i = 0; i < sig->length; ++i) {
++    if (sig && ASN1_STRING_get0_data(sig)) {
++        const unsigned char *s = ASN1_STRING_get0_data(sig);
++        for (int i = 0; i < ASN1_STRING_length(sig); ++i) {
+             char hex[3];
+             snprintf(hex, sizeof(hex), "%02x", s[i]);
+             out.append(hex);
+@@ -418,8 +418,7 @@ mimicAuthorityKeyId(Security::CertPointer &cert, Secur
+     unsigned char *ext_der = nullptr;
+     int ext_len = ASN1_item_i2d((ASN1_VALUE *)theAuthKeyId.get(), &ext_der, ASN1_ITEM_ptr(method->it));
+     Ssl::ASN1_OCTET_STRING_Pointer extOct(ASN1_OCTET_STRING_new());
+-    extOct.get()->data = ext_der;
+-    extOct.get()->length = ext_len;
++    ASN1_STRING_set0(extOct.get(), ext_der, ext_len);
+     Ssl::X509_EXTENSION_Pointer extAuthKeyId(X509_EXTENSION_create_by_NID(nullptr, NID_authority_key_identifier, 0, extOct.get()));
+     if (!extAuthKeyId.get())
+         return false;
+@@ -495,8 +494,7 @@ mimicExtensions(Security::CertPointer & cert, Security
+                                                 (const ASN1_ITEM *)ASN1_ITEM_ptr(method->it));
+ 
+                     ASN1_OCTET_STRING *ext_oct = ASN1_OCTET_STRING_new();
+-                    ext_oct->data = ext_der;
+-                    ext_oct->length = ext_len;
++                    ASN1_STRING_set0(ext_oct, ext_der, ext_len);
+                     X509_EXTENSION_set_data(ext, ext_oct);
+ 
+                     ASN1_OCTET_STRING_free(ext_oct);
+@@ -518,7 +516,7 @@ mimicExtensions(Security::CertPointer & cert, Security
+ SBuf
+ Ssl::AsnToSBuf(const ASN1_STRING &buffer)
+ {
+-    return SBuf(reinterpret_cast<const char *>(buffer.data), buffer.length);
++    return SBuf(reinterpret_cast<const char *>(ASN1_STRING_get0_data(&buffer), ASN1_STRING_length(&buffer)));
+ }
+ 
+ /// OpenSSL ASN1_STRING_to_UTF8() wrapper
+@@ -929,13 +927,12 @@ Ssl::OneLineSummary(X509_NAME &name)
+ 
+ bool Ssl::sslDateIsInTheFuture(char const * date)
+ {
+-    ASN1_UTCTIME tm;
+-    tm.flags = 0;
+-    tm.type = 23;
+-    tm.data = (unsigned char *)date;
+-    tm.length = strlen(date);
++    ASN1_UTCTIME *tm = ASN1_UTCTIME_new();
++    ASN1_UTCTIME_set_string(tm, date);
++    bool rv = (X509_cmp_current_time(tm) > 0);
++    ASN1_STRING_free(tm);
+ 
+-    return (X509_cmp_current_time(&tm) > 0);
++    return rv;
+ }
+ 
+ /// Print the time represented by a ASN1_TIME struct to a string using GeneralizedTime format
+@@ -947,12 +944,12 @@ static bool asn1timeToGeneralizedTimeStr(ASN1_TIME *aT
+ 
+     // length should have space for data plus 2 extra bytes for the two extra year fields
+     // plus the '\0' char.
+-    if ((aTime->length + 3) > bufLen)
++    if ((ASN1_STRING_length(aTime) + 3) > bufLen)
+         return false;
+ 
+     char *str;
+-    if (aTime->type == V_ASN1_UTCTIME) {
+-        if (aTime->data[0] > '5') { // RFC 2459, section 4.1.2.5.1
++    if (ASN1_STRING_type(aTime) == V_ASN1_UTCTIME) {
++        if (ASN1_STRING_get0_data(aTime)[0] > '5') { // RFC 2459, section 4.1.2.5.1
+             buf[0] = '1';
+             buf[1] = '9';
+         } else {
+@@ -963,8 +960,8 @@ static bool asn1timeToGeneralizedTimeStr(ASN1_TIME *aT
+     } else // if (aTime->type == V_ASN1_GENERALIZEDTIME)
+         str = buf;
+ 
+-    memcpy(str, aTime->data, aTime->length);
+-    str[aTime->length] = '\0';
++    memcpy(str, ASN1_STRING_get0_data(aTime), ASN1_STRING_length(aTime));
++    str[ASN1_STRING_length(aTime)] = '\0';
+     return true;
+ }
+ 
