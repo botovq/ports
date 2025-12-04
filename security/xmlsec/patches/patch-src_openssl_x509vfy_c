@@ -1,0 +1,12 @@
+Index: src/openssl/x509vfy.c
+--- src/openssl/x509vfy.c.orig
++++ src/openssl/x509vfy.c
+@@ -1542,7 +1542,7 @@ xmlSecOpenSSLX509MatchBySki(X509* cert, const xmlSecBy
+     if(keyId == NULL) {
+         return(0);
+     }
+-    if((keyId->length != skiLen) || (memcmp(keyId->data, ski, (size_t)skiLen) != 0)) {
++    if((ASN1_STRING_length(keyId) != skiLen) || (memcmp(ASN1_STRING_get0_data(keyId), ski, (size_t)skiLen) != 0)) {
+         ASN1_OCTET_STRING_free(keyId);
+         return(0);
+     }

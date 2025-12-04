@@ -1,0 +1,84 @@
+Index: src/openssl/x509.c
+--- src/openssl/x509.c.orig
++++ src/openssl/x509.c
+@@ -1478,6 +1478,7 @@ xmlSecOpenSSLX509Asn1TimeToTime(const ASN1_TIME * t, t
+ int
+ xmlSecOpenSSLX509Asn1TimeToTime(const ASN1_TIME * t, time_t * res) {
+     struct tm tm;
++    const unsigned char *data;
+     int offset;
+ 
+     xmlSecAssert2(t != NULL, -1);
+@@ -1489,48 +1490,49 @@ xmlSecOpenSSLX509Asn1TimeToTime(const ASN1_TIME * t, t
+     }
+ 
+     memset(&tm, 0, sizeof(tm));
++    data = ASN1_STRING_get0_data(t);
+ 
+ #define g2(p) (((p)[0]-'0')*10+(p)[1]-'0')
+-    if(t->type == V_ASN1_UTCTIME) {
+-        xmlSecAssert2(t->length > 12, 0);
++    if(ASN1_STRING_type(t) == V_ASN1_UTCTIME) {
++        xmlSecAssert2(ASN1_STRING_length(t) > 12, 0);
+ 
+         /* this code is copied from OpenSSL asn1/a_utctm.c file */
+-        tm.tm_year = g2(t->data);
++        tm.tm_year = g2(data);
+         if(tm.tm_year < 50) {
+             tm.tm_year += 100;
+         }
+-        tm.tm_mon  = g2(t->data + 2) - 1;
+-        tm.tm_mday = g2(t->data + 4);
+-        tm.tm_hour = g2(t->data + 6);
+-        tm.tm_min  = g2(t->data + 8);
+-        tm.tm_sec  = g2(t->data + 10);
+-        if(t->data[12] == 'Z') {
++        tm.tm_mon  = g2(data + 2) - 1;
++        tm.tm_mday = g2(data + 4);
++        tm.tm_hour = g2(data + 6);
++        tm.tm_min  = g2(data + 8);
++        tm.tm_sec  = g2(data + 10);
++        if(data[12] == 'Z') {
+             offset = 0;
+         } else {
+-            xmlSecAssert2(t->length > 16, 0);
++            xmlSecAssert2(ASN1_STRING_length(t) > 16, 0);
+ 
+-            offset = g2(t->data + 13) * 60 + g2(t->data + 15);
+-            if(t->data[12] == '-') {
++            offset = g2(data + 13) * 60 + g2(data + 15);
++            if(data[12] == '-') {
+                 offset = -offset;
+             }
+         }
+         tm.tm_isdst = -1;
+     } else {
+-        xmlSecAssert2(t->length > 14, 0);
++        xmlSecAssert2(ASN1_STRING_length(t) > 14, 0);
+ 
+-        tm.tm_year = g2(t->data) * 100 + g2(t->data + 2);
+-        tm.tm_mon  = g2(t->data + 4) - 1;
+-        tm.tm_mday = g2(t->data + 6);
+-        tm.tm_hour = g2(t->data + 8);
+-        tm.tm_min  = g2(t->data + 10);
+-        tm.tm_sec  = g2(t->data + 12);
+-        if(t->data[14] == 'Z') {
++        tm.tm_year = g2(data) * 100 + g2(data + 2);
++        tm.tm_mon  = g2(data + 4) - 1;
++        tm.tm_mday = g2(data + 6);
++        tm.tm_hour = g2(data + 8);
++        tm.tm_min  = g2(data + 10);
++        tm.tm_sec  = g2(data + 12);
++        if(data[14] == 'Z') {
+             offset = 0;
+         } else {
+-            xmlSecAssert2(t->length > 18, 0);
++            xmlSecAssert2(ASN1_STRING_length(t) > 18, 0);
+ 
+-            offset = g2(t->data + 15) * 60 + g2(t->data + 17);
+-            if(t->data[14] == '-') {
++            offset = g2(data + 15) * 60 + g2(data + 17);
++            if(data[14] == '-') {
+                 offset = -offset;
+             }
+         }
