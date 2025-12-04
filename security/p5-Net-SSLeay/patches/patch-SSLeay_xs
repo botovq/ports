@@ -4,7 +4,154 @@
 Index: SSLeay.xs
 --- SSLeay.xs.orig
 +++ SSLeay.xs
-@@ -7493,8 +7493,12 @@ SSL_CTX_set_tlsext_ticket_getkey_cb(ctx,callback=&PL_s
+@@ -2158,35 +2158,36 @@ int ssl_client_hello_cb_fn_invoke(SSL *ssl, int *al, v
+ 
+ time_t ASN1_TIME_timet(ASN1_TIME *asn1t, time_t *gmtoff) {
+     struct tm t;
+-    const char *p = (const char*) asn1t->data;
++    const char *p = (const char*) ASN1_STRING_get0_data(asn1t);
++    int len = ASN1_STRING_length(asn1t);
+     size_t msec = 0, tz = 0, i, l;
+     time_t result;
+     int adj = 0;
+ 
+-    if (asn1t->type == V_ASN1_UTCTIME) {
+-	if (asn1t->length<12 || asn1t->length>17) return 0;
+-	if (asn1t->length>12) tz = 12;
++    if (ASN1_STRING_type(asn1t) == V_ASN1_UTCTIME) {
++	if (len<12 || len>17) return 0;
++	if (len>12) tz = 12;
+     } else {
+-	if (asn1t->length<14) return 0;
+-	if (asn1t->length>14) {
++	if (len<14) return 0;
++	if (len>14) {
+ 	    if (p[14] == '.') {
+ 		msec = 14;
+-		for(i=msec+1;i<asn1t->length && p[i]>='0' && p[i]<='9';i++) ;
+-		if (i<asn1t->length) tz = i;
++		for(i=msec+1;i<len && p[i]>='0' && p[i]<='9';i++) ;
++		if (i<len) tz = i;
+ 	    } else {
+ 		tz = 14;
+ 	    }
+ 	}
+     }
+ 
+-    l = msec ? msec : tz ? tz : asn1t->length;
++    l = msec ? msec : tz ? tz : len;
+     for(i=0;i<l;i++) {
+ 	if (p[i]<'0' || p[i]>'9') return 0;
+     }
+ 
+     /* extract data and time */
+     OPENSSL_cleanse(&t, sizeof(t));
+-    if (asn1t->type == V_ASN1_UTCTIME) { /* YY - two digit year */
++    if (ASN1_STRING_type(asn1t) == V_ASN1_UTCTIME) { /* YY - two digit year */
+ 	t.tm_year = (p[0]-'0')*10 + (p[1]-'0');
+ 	if (t.tm_year < 70) t.tm_year += 100;
+ 	i=2;
+@@ -2206,11 +2207,11 @@ time_t ASN1_TIME_timet(ASN1_TIME *asn1t, time_t *gmtof
+     if (tz) {
+ 	/* TZ is 'Z' or [+-]DDDD and after TZ the string must stop*/
+ 	if (p[tz] == 'Z') {
+-	    if (asn1t->length>tz+1 ) return 0;
+-	} else if (asn1t->length<tz+5 || (p[tz]!='-' && p[tz]!='+')) {
++	    if (len>tz+1 ) return 0;
++	} else if (len<tz+5 || (p[tz]!='-' && p[tz]!='+')) {
+ 	    return 0;
+ 	} else {
+-	    if (asn1t->length>tz+5 ) return 0;
++	    if (len>tz+5 ) return 0;
+ 	    for(i=tz+1;i<tz+5;i++) {
+ 		if (p[i]<'0' || p[i]>'9') return 0;
+ 	    }
+@@ -4557,7 +4558,7 @@ X509_get_subjectAltNames(cert)
+                          EXTEND(SP, 2);
+                          count++;
+                          PUSHs(sv_2mortal(newSViv(subjAltNameDN->type)));
+-                         PUSHs(sv_2mortal(newSVpv((const char*)subjAltNameDN->d.ip->data, subjAltNameDN->d.ip->length)));
++                         PUSHs(sv_2mortal(newSVpv((const char*)ASN1_STRING_get0_data(subjAltNameDN->d.ip), ASN1_STRING_length(subjAltNameDN->d.ip))));
+                          break;
+ 
+                      }
+@@ -5096,15 +5097,16 @@ P_ASN1_TIME_get_isotime(tm)
+      ASN1_TIME_to_generalizedtime(tm,&tmp);
+      if (tmp) {
+        if (ASN1_GENERALIZEDTIME_check(tmp)) {
+-         if (strlen((char*)tmp->data)>=14 && strlen((char*)tmp->data)<200) {
++         const char *data = (const char *)ASN1_STRING_get0_data(tmp);
++         if (strlen(data)>=14 && strlen(data) <200) {
+            strcpy (buf,"yyyy-mm-ddThh:mm:ss");
+-           strncpy(buf,   (char*)tmp->data,   4);
+-           strncpy(buf+5, (char*)tmp->data+4, 2);
+-           strncpy(buf+8, (char*)tmp->data+6, 2);
+-           strncpy(buf+11,(char*)tmp->data+8, 2);
+-           strncpy(buf+14,(char*)tmp->data+10,2);
+-           strncpy(buf+17,(char*)tmp->data+12,2);
+-           if (strlen((char*)tmp->data)>14) strcat(buf+19,(char*)tmp->data+14);
++           strncpy(buf,   data,   4);
++           strncpy(buf+5, data+4, 2);
++           strncpy(buf+8, data+6, 2);
++           strncpy(buf+11,data+8, 2);
++           strncpy(buf+14,data+10,2);
++           strncpy(buf+17,data+12,2);
++           if (strlen(data)>14) strcat(buf+19,data+14);
+          }
+        }
+        ASN1_GENERALIZEDTIME_free(tmp);
+@@ -5112,6 +5114,8 @@ P_ASN1_TIME_get_isotime(tm)
+      ST(0) = sv_newmortal();
+      sv_setpv(ST(0), buf);
+ 
++#if OPENSSL_VERSION_NUMBER < 0x1010000fL
++
+ void
+ P_ASN1_TIME_set_isotime(tm,str)
+      ASN1_TIME *tm
+@@ -5159,6 +5163,41 @@ P_ASN1_TIME_set_isotime(tm,str)
+      ST(0) = sv_newmortal();
+      sv_setiv(ST(0), rv); /* 1 = success, undef = failure */
+ 
++#else
++
++void
++P_ASN1_TIME_set_isotime(tm,str)
++     ASN1_TIME *tm
++     const char *str
++     PREINIT:
++     char buf[256];
++     int i,rv;
++     CODE:
++     if (!tm) XSRETURN_UNDEF;
++     /* we support only "2012-03-22T23:55:33" or "2012-03-22T23:55:33Z" or "2012-03-22T23:55:33<timezone>" */
++     if (strlen(str) < 19) XSRETURN_UNDEF;
++     for (i=0;  i<4;  i++) if ((str[i] > '9') || (str[i] < '0')) XSRETURN_UNDEF;
++     for (i=5;  i<7;  i++) if ((str[i] > '9') || (str[i] < '0')) XSRETURN_UNDEF;
++     for (i=8;  i<10; i++) if ((str[i] > '9') || (str[i] < '0')) XSRETURN_UNDEF;
++     for (i=11; i<13; i++) if ((str[i] > '9') || (str[i] < '0')) XSRETURN_UNDEF;
++     for (i=14; i<16; i++) if ((str[i] > '9') || (str[i] < '0')) XSRETURN_UNDEF;
++     for (i=17; i<19; i++) if ((str[i] > '9') || (str[i] < '0')) XSRETURN_UNDEF;
++     strncpy(buf,    str,    4);
++     strncpy(buf+4,  str+5,  2);
++     strncpy(buf+6,  str+8,  2);
++     strncpy(buf+8,  str+11, 2);
++     strncpy(buf+10, str+14, 2);
++     strncpy(buf+12, str+17, 2);
++     buf[14] = '\0';
++     if (strlen(str)>19 && strlen(str)<200) strcat(buf,str+19);
++
++     rv = ASN1_TIME_set_string(tm, buf);
++
++     ST(0) = sv_newmortal();
++     sv_setiv(ST(0), rv); /* 1 = success, undef = failure */
++
++#endif
++
+ int
+ EVP_PKEY_copy_parameters(to,from)
+      EVP_PKEY *		to
+@@ -7493,8 +7532,12 @@ SSL_CTX_set_tlsext_ticket_getkey_cb(ctx,callback=&PL_s
  
  #endif
  
@@ -17,7 +164,7 @@ Index: SSLeay.xs
  #ifndef OPENSSL_NO_SHA
  
  const EVP_MD *EVP_sha1()
-@@ -7973,7 +7977,9 @@ P_X509_get_signature_alg(x)
+@@ -7973,7 +8016,9 @@ P_X509_get_signature_alg(x)
          X509 * x
      CODE:
  #if (OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)) || (LIBRESSL_VERSION_NUMBER >= 0x3050000fL)
@@ -28,7 +175,7 @@ Index: SSLeay.xs
  #else
          RETVAL = (x->cert_info->signature->algorithm);
  #endif
-@@ -7988,8 +7994,10 @@ P_X509_get_pubkey_alg(x)
+@@ -7988,8 +8033,10 @@ P_X509_get_pubkey_alg(x)
  #if OPENSSL_VERSION_NUMBER >= 0x10100000L
      {
  	X509_ALGOR * algor;
