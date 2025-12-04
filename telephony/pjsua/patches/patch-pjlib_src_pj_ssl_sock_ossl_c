@@ -1,0 +1,23 @@
+Index: pjlib/src/pj/ssl_sock_ossl.c
+--- pjlib/src/pj/ssl_sock_ossl.c.orig
++++ pjlib/src/pj/ssl_sock_ossl.c
+@@ -1969,15 +1969,15 @@ static pj_bool_t parse_ossl_asn1_time(pj_time_val *tv,
+                                       const ASN1_TIME *tm)
+ {
+     unsigned long parts[7] = {0};
+-    char *p, *end;
++    const char *p, *end;
+     unsigned len;
+     pj_bool_t utc;
+     pj_parsed_time pt;
+     int i;
+ 
+-    utc = tm->type == V_ASN1_UTCTIME;
+-    p = (char*)tm->data;
+-    len = tm->length;
++    utc = ASN1_STRING_type(tm) == V_ASN1_UTCTIME;
++    p = (const char*)ASN1_STRING_get0_data(tm);
++    len = ASN1_STRING_length(tm);
+     end = p + len - 1;
+ 
+     /* GMT */
