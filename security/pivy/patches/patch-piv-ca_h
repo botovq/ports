@@ -1,0 +1,11 @@
+Index: piv-ca.h
+--- piv-ca.h.orig
++++ piv-ca.h
+@@ -338,6 +338,7 @@ errf_t	*parse_dn(const char *dnstr, X509_NAME *name);
+ errf_t	*unparse_dn(X509_NAME *name, char **out);
+ 
+ #if !defined(JSONC_14)
++struct json_tokener;
+ size_t json_tokener_get_parse_end(struct json_tokener *tok);
+ #endif
+ 

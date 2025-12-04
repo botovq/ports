@@ -36,3 +36,70 @@ Index: piv-certs.c
  
  	err = load_ossl_config("piv_ca", cs, &config);
  	if (err != ERRF_OK)
+@@ -2841,8 +2842,7 @@ agent_sign_cert(int fd, struct sshkey *pubkey, X509 *c
+ 		goto out;
+ 	}
+ 
+-	ASN1_STRING_set(asnsig, sshbuf_ptr(asn1sig), sshbuf_len(asn1sig));
+-	asnsig->flags |= ASN1_STRING_FLAG_BITS_LEFT;
++	ASN1_BIT_STRING_set1(asnsig, sshbuf_ptr(asn1sig), sshbuf_len(asn1sig), 0);
+ 
+ 	err = ERRF_OK;
+ 
+@@ -2869,7 +2869,7 @@ piv_sign_cert(struct piv_token *tkn, struct piv_slot *
+ 	X509_ALGOR *algor = NULL;
+ 	ASN1_OBJECT *algobj;
+ 	uint8_t *tbs = NULL, *sig = NULL;
+-	size_t tbslen, siglen;
++	size_t tbslen, siglen = 0;
+ 	AUTHORITY_KEYID *akid = NULL;
+ 	ASN1_OCTET_STRING *kid = NULL;
+ 
+@@ -2947,8 +2947,7 @@ piv_sign_cert(struct piv_token *tkn, struct piv_slot *
+ 		goto out;
+ 	}
+ 
+-	ASN1_STRING_set(asnsig, sig, siglen);
+-	asnsig->flags |= ASN1_STRING_FLAG_BITS_LEFT;
++	ASN1_BIT_STRING_set1(asnsig, sig, siglen, 0);
+ 
+ 	err = ERRF_OK;
+ 
+@@ -2957,6 +2956,7 @@ out:
+ 	AUTHORITY_KEYID_free(akid);
+ 	EVP_PKEY_free(pkey);
+ 	OPENSSL_free(tbs);
++	freezero(sig, siglen);
+ 	return (err);
+ }
+ 
+@@ -3062,8 +3062,7 @@ agent_sign_crl(int fd, struct sshkey *pubkey, X509_CRL
+ 		goto out;
+ 	}
+ 
+-	ASN1_STRING_set(asnsig, sshbuf_ptr(asn1sig), sshbuf_len(asn1sig));
+-	asnsig->flags |= ASN1_STRING_FLAG_BITS_LEFT;
++	ASN1_BIT_STRING_set1(asnsig, sshbuf_ptr(asn1sig), sshbuf_len(asn1sig), 0);
+ 
+ 	err = ERRF_OK;
+ 
+@@ -3163,8 +3162,7 @@ piv_sign_crl(struct piv_token *tkn, struct piv_slot *s
+ 		goto out;
+ 	}
+ 
+-	ASN1_STRING_set(asnsig, sig, siglen);
+-	asnsig->flags |= ASN1_STRING_FLAG_BITS_LEFT;
++	ASN1_BIT_STRING_set1(asnsig, sig, siglen, 0);
+ 
+ 	err = ERRF_OK;
+ 
+@@ -3244,8 +3242,7 @@ piv_sign_cert_req(struct piv_token *tkn, struct piv_sl
+ 		goto out;
+ 	}
+ 
+-	ASN1_STRING_set(asnsig, sig, siglen);
+-	asnsig->flags |= ASN1_STRING_FLAG_BITS_LEFT;
++	ASN1_BIT_STRING_set1(asnsig, sig, siglen, 0);
+ 
+ 	err = ERRF_OK;
+ 

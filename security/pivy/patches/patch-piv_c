@@ -1,0 +1,12 @@
+Index: piv.c
+--- piv.c.orig
++++ piv.c
+@@ -2940,7 +2940,7 @@ ykpiv_attest_metadata(struct piv_token *pt, struct piv
+ 		return (invderrf(err, pt->pt_rdrname));
+ 	}
+ 
+-	data = ASN1_STRING_data(octstr);
++	data = ASN1_STRING_get0_data(octstr);
+ 	pinpol = data[0];
+ 	touchpol = data[1];
+ 	bunyan_log(BNY_TRACE, "got policy bytes from attestation cert",

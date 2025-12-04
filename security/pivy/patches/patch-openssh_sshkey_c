@@ -1,6 +1,8 @@
 Pull in sshkey.c r1.148 to remove dependency on EC_GROUP_method_of()
 EC_METHOD_get_field_type().
 
+Use EC_POINT_get_affine_coordinates instead of EC_POINT_get_affine_coordinates_GFp
+
 Index: openssh/sshkey.c
 --- openssh/sshkey.c.orig
 +++ openssh/sshkey.c
@@ -19,15 +21,29 @@ Index: openssh/sshkey.c
  	/* Q != infinity */
  	if (EC_POINT_is_at_infinity(group, public))
  		goto out;
-@@ -2697,11 +2689,6 @@ sshkey_dump_ec_point(const EC_GROUP *group, const EC_P
- 	}
- 	if ((x = BN_new()) == NULL || (y = BN_new()) == NULL) {
+@@ -2614,7 +2606,7 @@ sshkey_ec_validate_public(const EC_GROUP *group, const
+ 
+ 	/* log2(x) > log2(order)/2, log2(y) > log2(order)/2 */
+ 	if (EC_GROUP_get_order(group, order, NULL) != 1 ||
+-	    EC_POINT_get_affine_coordinates_GFp(group, public,
++	    EC_POINT_get_affine_coordinates(group, public,
+ 	    x, y, NULL) != 1) {
+ 		ret = SSH_ERR_LIBCRYPTO_ERROR;
+ 		goto out;
+@@ -2699,14 +2691,9 @@ sshkey_dump_ec_point(const EC_GROUP *group, const EC_P
  		fprintf(stderr, "%s: BN_new failed\n", __func__);
--		goto out;
--	}
+ 		goto out;
+ 	}
 -	if (EC_METHOD_get_field_type(EC_GROUP_method_of(group)) !=
 -	    NID_X9_62_prime_field) {
 -		fprintf(stderr, "%s: group is not a prime field\n", __func__);
+-		goto out;
+-	}
+-	if (EC_POINT_get_affine_coordinates_GFp(group, point,
++	if (EC_POINT_get_affine_coordinates(group, point,
+ 	    x, y, NULL) != 1) {
+-		fprintf(stderr, "%s: EC_POINT_get_affine_coordinates_GFp\n",
++		fprintf(stderr, "%s: EC_POINT_get_affine_coordinates\n",
+ 		    __func__);
  		goto out;
  	}
- 	if (EC_POINT_get_affine_coordinates_GFp(group, point,
