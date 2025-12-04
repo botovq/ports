@@ -9,6 +9,47 @@ Index: openssl.c
     const X509_ALGOR *tsig_alg;
  #endif
     int loc;
+@@ -374,7 +375,7 @@ static int ssl_store_cert(struct client_state *csp, X5
+       goto exit;
+    }
+    bs = X509_get0_serialNumber(crt);
+-   if (bs->length <= (int)sizeof(long))
++   if (ASN1_STRING_length(bs) <= (int)sizeof(long))
+    {
+       ERR_set_mark();
+       l = ASN1_INTEGER_get(bs);
+@@ -388,7 +389,7 @@ static int ssl_store_cert(struct client_state *csp, X5
+    {
+       unsigned long ul;
+       const char *neg;
+-      if (bs->type == V_ASN1_NEG_INTEGER)
++      if (ASN1_STRING_type(bs) == V_ASN1_NEG_INTEGER)
+       {
+          ul = 0 - (unsigned long)l;
+          neg = "-";
+@@ -408,7 +409,7 @@ static int ssl_store_cert(struct client_state *csp, X5
+    else
+    {
+       int i;
+-      if (bs->type == V_ASN1_NEG_INTEGER)
++      if (ASN1_STRING_type(bs) == V_ASN1_NEG_INTEGER)
+       {
+          if (BIO_puts(bio, " (Negative)") < 0)
+          {
+@@ -417,10 +418,10 @@ static int ssl_store_cert(struct client_state *csp, X5
+             goto exit;
+          }
+       }
+-      for (i = 0; i < bs->length; i++)
++      for (i = 0; i < ASN1_STRING_length(bs); i++)
+       {
+-         if (BIO_printf(bio, "%02x%c", bs->data[i],
+-               ((i + 1 == bs->length) ? '\n' : ':')) <= 0)
++         if (BIO_printf(bio, "%02x%c", ASN1_STRING_get0_data(bs)[i],
++               ((i + 1 == ASN1_STRING_length(bs)) ? '\n' : ':')) <= 0)
+          {
+             log_ssl_errors(LOG_LEVEL_ERROR, "BIO_printf() for serial failed");
+             ret = -1;
 @@ -488,7 +489,8 @@ static int ssl_store_cert(struct client_state *csp, X5
        goto exit;
     }
