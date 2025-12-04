@@ -1,0 +1,72 @@
+Index: X509.xs
+--- X509.xs.orig
++++ X509.xs
+@@ -541,15 +541,15 @@ sig_print(x509)
+ 
+   PREINIT:
+   BIO *bio;
+-  unsigned char *s;
++  const unsigned char *s;
+   const_ossl11 ASN1_BIT_STRING *psig;
+   int n,i;
+ 
+   CODE:
+ 
+   X509_get0_signature(&psig, NULL, x509);
+-  n   = psig->length;
+-  s   = psig->data;
++  n   = ASN1_STRING_length(psig);
++  s   = ASN1_STRING_get0_data(psig);
+   bio = sv_bio_create();
+ 
+   for (i=0; i<n; i++) {
+@@ -1151,7 +1151,7 @@ ia5string(ext)
+   /* retrieving the value of an ia5string object */
+   bio = sv_bio_create();
+   str = X509V3_EXT_d2i(ext);
+-  BIO_printf(bio,"%s", str->data);
++  BIO_printf(bio,"%s", (const char *)ASN1_STRING_get0_data(str));
+   ASN1_IA5STRING_free(str);
+ 
+   RETVAL = sv_bio_final(bio);
+@@ -1259,12 +1259,12 @@ keyid_data(ext)
+   if (nid == NID_authority_key_identifier) {
+ 
+     akid = X509V3_EXT_d2i(ext);
+-    BIO_printf(bio, "%s", akid->keyid->data);
++    BIO_printf(bio, "%s", (const char *)ASN1_STRING_get0_data(akid->keyid));
+ 
+   } else if (nid == NID_subject_key_identifier) {
+ 
+     skid = X509V3_EXT_d2i(ext);
+-    BIO_printf(bio, "%s", skid->data);
++    BIO_printf(bio, "%s", (const char *)ASN1_STRING_get0_data(skid));
+   }
+ 
+   RETVAL = sv_bio_final(bio);
+@@ -1520,7 +1520,7 @@ is_printableString(name_entry, asn1_type =  V_ASN1_PRI
+   is_utf8string = V_ASN1_UTF8STRING
+ 
+   CODE:
+-  RETVAL = (X509_NAME_ENTRY_get_data(name_entry)->type == (ix == 1 ? asn1_type : ix));
++  RETVAL = (ASN1_STRING_type(X509_NAME_ENTRY_get_data(name_entry)) == (ix == 1 ? asn1_type : ix));
+ 
+   OUTPUT:
+   RETVAL
+@@ -1532,13 +1532,13 @@ encoding(name_entry)
+   CODE:
+   RETVAL = NULL;
+ 
+-  if (X509_NAME_ENTRY_get_data(name_entry)->type == V_ASN1_PRINTABLESTRING) {
++  if (ASN1_STRING_type(X509_NAME_ENTRY_get_data(name_entry)) == V_ASN1_PRINTABLESTRING) {
+     RETVAL = "printableString";
+ 
+-  } else if(X509_NAME_ENTRY_get_data(name_entry)->type == V_ASN1_IA5STRING) {
++  } else if(ASN1_STRING_type(X509_NAME_ENTRY_get_data(name_entry)) == V_ASN1_IA5STRING) {
+     RETVAL = "ia5String";
+ 
+-  } else if(X509_NAME_ENTRY_get_data(name_entry)->type == V_ASN1_UTF8STRING) {
++  } else if(ASN1_STRING_type(X509_NAME_ENTRY_get_data(name_entry)) == V_ASN1_UTF8STRING) {
+     RETVAL = "utf8String";
+   }
+ 
