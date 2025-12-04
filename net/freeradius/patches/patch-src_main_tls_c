@@ -28,6 +28,15 @@ Index: src/main/tls.c
  static SSL_SESSION *cbtls_cache_load(SSL *ssl, unsigned char *data, int len, int *copy)
  #else
  static SSL_SESSION *cbtls_cache_load(SSL *ssl, const unsigned char *data, int len, int *copy)
+@@ -2627,7 +2627,7 @@ static int ocsp_parse_cert_url(X509 *cert, char **host
+ 		if (ad->location->type != GEN_URI) continue;
+ 		found_uri = true;
+ 
+-		if (OCSP_parse_url((char *) ad->location->d.ia5->data, host_out,
++		if (OCSP_parse_url((const char *) ASN1_STRING_get0_data(ad->location->d.ia5), host_out,
+ 				   port_out, path_out, is_https)) return 1;
+ 	}
+ 	return found_uri ? -1 : 0;
 @@ -2985,7 +2985,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
  	char		cn_str[1024];
  	char		buf[64];
@@ -37,6 +46,48 @@ Index: src/main/tls.c
  	const STACK_OF(X509_EXTENSION) *ext_list;
  #else
  	STACK_OF(X509_EXTENSION) *ext_list;
+@@ -3071,12 +3071,12 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
+ 	 *	we're at the client or issuing certificate.
+ 	 */
+ 	if (certs &&
+-	    (lookup <= 1) && sn && ((size_t) sn->length < (sizeof(buf) / 2))) {
++	    (lookup <= 1) && sn && ((size_t) ASN1_STRING_length(sn) < (sizeof(buf) / 2))) {
+ 		char *p = buf;
+ 		int i;
+ 
+-		for (i = 0; i < sn->length; i++) {
+-			sprintf(p, "%02x", (unsigned int)sn->data[i]);
++		for (i = 0; i < ASN1_STRING_length(sn); i++) {
++			sprintf(p, "%02x", (unsigned int)ASN1_STRING_get0_data(sn)[i]);
+ 			p += 2;
+ 		}
+ 		vp = fr_pair_make(talloc_ctx, certs, cert_attr_names[FR_TLS_SERIAL][lookup], buf, T_OP_SET);
+@@ -3089,9 +3089,9 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
+ 	buf[0] = '\0';
+ 	asn_time = X509_get_notAfter(client_cert);
+ 	if (certs && (lookup <= 1) && asn_time &&
+-	    (asn_time->length < (int) sizeof(buf))) {
+-		memcpy(buf, (char*) asn_time->data, asn_time->length);
+-		buf[asn_time->length] = '\0';
++	    (ASN1_STRING_length(asn_time) < (int) sizeof(buf))) {
++		memcpy(buf, ASN1_STRING_get0_data(asn_time), ASN1_STRING_length(asn_time));
++		buf[ASN1_STRING_length(asn_time)] = '\0';
+ 		vp = fr_pair_make(talloc_ctx, certs, cert_attr_names[FR_TLS_EXPIRATION][lookup], buf, T_OP_SET);
+ 		rdebug_pair(L_DBG_LVL_2, request, vp, NULL);
+ 	}
+@@ -3102,9 +3102,9 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
+ 	buf[0] = '\0';
+ 	asn_time = X509_get_notBefore(client_cert);
+ 	if (certs && (lookup <= 1) && asn_time &&
+-	    (asn_time->length < (int) sizeof(buf))) {
+-		memcpy(buf, (char*) asn_time->data, asn_time->length);
+-		buf[asn_time->length] = '\0';
++	    (ASN1_STRING_length(asn_time) < (int) sizeof(buf))) {
++		memcpy(buf, ASN1_STRING_get0_data(asn_time), ASN1_STRING_length(asn_time));
++		buf[ASN1_STRING_length(asn_time)] = '\0';
+ 		vp = fr_pair_make(talloc_ctx, certs, cert_attr_names[FR_TLS_VALID_SINCE][lookup], buf, T_OP_SET);
+ 		rdebug_pair(L_DBG_LVL_2, request, vp, NULL);
+ 	}
 @@ -3220,7 +3220,7 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
  	}
  
