@@ -1,0 +1,12 @@
+Index: modules/ssl/ssl_engine_ocsp.c
+--- modules/ssl/ssl_engine_ocsp.c.orig
++++ modules/ssl/ssl_engine_ocsp.c
+@@ -39,7 +39,7 @@ static const char *extract_responder_uri(X509 *cert, a
+         if (OBJ_obj2nid(value->method) == NID_ad_OCSP
+             && value->location->type == GEN_URI) {
+             result = apr_pstrdup(pool,
+-                                 (char *)value->location->d.uniformResourceIdentifier->data);
++                                 (char *)ASN1_STRING_get0_data(value->location->d.uniformResourceIdentifier));
+         }
+     }
+ 
