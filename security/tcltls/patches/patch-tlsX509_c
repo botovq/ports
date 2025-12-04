@@ -1,0 +1,34 @@
+Index: tlsX509.c
+--- tlsX509.c.orig
++++ tlsX509.c
+@@ -32,7 +32,7 @@ static char *
+ ASN1_UTCTIME_tostr(ASN1_UTCTIME *tm)
+ {
+     static char bp[128];
+-    char *v;
++    const char *v;
+     int gmt=0;
+     static char *mon[12]={
+         "Jan","Feb","Mar","Apr","May","Jun",
+@@ -40,8 +40,8 @@ ASN1_UTCTIME_tostr(ASN1_UTCTIME *tm)
+     int i;
+     int y=0,M=0,d=0,h=0,m=0,s=0;
+     
+-    i=tm->length;
+-    v=(char *)tm->data;
++    i=ASN1_STRING_length(tm);
++    v=(const char *)ASN1_STRING_get0_data(tm);
+     
+     if (i < 10) goto err;
+     if (v[i-1] == 'Z') gmt=1;
+@@ -87,9 +87,7 @@ ASN1_UTCTIME_tostr(ASN1_UTCTIME *tm)
+ #define CERT_STR_SIZE 16384
+ 
+ Tcl_Obj*
+-Tls_NewX509Obj( interp, cert)
+-    Tcl_Interp *interp;
+-    X509 *cert;
++Tls_NewX509Obj(Tcl_Interp *interp, X509 *cert)
+ {
+     Tcl_Obj *certPtr = Tcl_NewListObj( 0, NULL);
+     BIO *bio;
