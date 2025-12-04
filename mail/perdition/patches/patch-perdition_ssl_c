@@ -1,0 +1,12 @@
+Index: perdition/ssl.c
+--- perdition/ssl.c.orig
++++ perdition/ssl.c
+@@ -941,7 +941,7 @@ __perdition_ssl_check_common_name(X509 *cert, const ch
+ 			return -1;
+ 		}
+ 
+-		if (!__perdition_ssl_compare_key(key, data->data, data->length))
++		if (!__perdition_ssl_compare_key(key, ASN1_STRING_get0_data(data), ASN1_STRING_length(data)))
+ 			return 0;
+ 	}
+ 
