@@ -1,0 +1,36 @@
+Index: libs/tcpd/libcouriertls.c
+--- libs/tcpd/libcouriertls.c.orig
++++ libs/tcpd/libcouriertls.c
+@@ -1838,12 +1838,12 @@ static time_t asn1toTime(ASN1_TIME *asn1Time)
+ 	struct tm tm;
+ 	int offset;
+ 
+-	if (asn1Time == NULL || asn1Time->length < 13)
++	if (asn1Time == NULL || ASN1_STRING_length(asn1Time) < 13)
+ 		return 0;
+ 
+ 	memset(&tm, 0, sizeof(tm));
+ 
+-#define N2(n)	((asn1Time->data[n]-'0')*10 + asn1Time->data[(n)+1]-'0')
++#define N2(n)	((ASN1_STRING_get0_data(asn1Time)[n]-'0')*10 + ASN1_STRING_get0_data(asn1Time)[(n)+1]-'0')
+ 
+ #define CPY(f,n) (tm.f=N2(n))
+ 
+@@ -1861,14 +1861,14 @@ static time_t asn1toTime(ASN1_TIME *asn1Time)
+ 
+ 	offset=0;
+ 
+-	if (asn1Time->data[12] != 'Z')
++	if (ASN1_STRING_get0_data(asn1Time)[12] != 'Z')
+ 	{
+-		if (asn1Time->length < 17)
++		if (ASN1_STRING_length(asn1Time) < 17)
+ 			return 0;
+ 
+ 		offset=N2(13)*3600+N2(15)*60;
+ 
+-		if (asn1Time->data[12] == '-')
++		if (ASN1_STRING_get0_data(asn1Time)[12] == '-')
+ 			offset= -offset;
+ 	}
+ 
