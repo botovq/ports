@@ -1,0 +1,36 @@
+Index: modcargo-crates/openssl-sys-0.9.110/src/handwritten/ec.rs
+--- modcargo-crates/openssl-sys-0.9.110/src/handwritten/ec.rs.orig
++++ modcargo-crates/openssl-sys-0.9.110/src/handwritten/ec.rs
+@@ -170,6 +170,16 @@ extern "C" {
+     #[cfg(not(osslconf = "OPENSSL_NO_EC2M"))]
+     pub fn EC_GF2m_simple_method() -> *const EC_METHOD;
+ 
++    #[cfg(any(ossl111, boringssl, libressl, awslc))]
++    pub fn EC_GROUP_get_curve(
++        group: *const EC_GROUP,
++        p: *mut BIGNUM,
++        a: *mut BIGNUM,
++        b: *mut BIGNUM,
++        ctx: *mut BN_CTX,
++    ) -> c_int;
++
++    #[cfg(not(libressl420))]
+     pub fn EC_GROUP_get_curve_GFp(
+         group: *const EC_GROUP,
+         p: *mut BIGNUM,
+@@ -187,6 +197,7 @@ extern "C" {
+         ctx: *mut BN_CTX,
+     ) -> c_int;
+ 
++    #[cfg(not(libressl420))]
+     pub fn EC_POINT_get_affine_coordinates_GFp(
+         group: *const EC_GROUP,
+         p: *const EC_POINT,
+@@ -195,6 +206,7 @@ extern "C" {
+         ctx: *mut BN_CTX,
+     ) -> c_int;
+ 
++    #[cfg(not(libressl420))]
+     pub fn EC_POINT_set_affine_coordinates_GFp(
+         group: *const EC_GROUP,
+         p: *mut EC_POINT,

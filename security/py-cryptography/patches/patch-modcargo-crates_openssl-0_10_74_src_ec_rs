@@ -1,0 +1,57 @@
+Index: modcargo-crates/openssl-0.10.74/src/ec.rs
+--- modcargo-crates/openssl-0.10.74/src/ec.rs.orig
++++ modcargo-crates/openssl-0.10.74/src/ec.rs
+@@ -168,7 +168,7 @@ impl EcGroup {
+ impl EcGroupRef {
+     /// Places the components of a curve over a prime field in the provided `BigNum`s.
+     /// The components make up the formula `y^2 mod p = x^3 + ax + b mod p`.
+-    #[corresponds(EC_GROUP_get_curve_GFp)]
++    #[corresponds(EC_GROUP_get_curve)]
+     pub fn components_gfp(
+         &self,
+         p: &mut BigNumRef,
+@@ -177,7 +177,7 @@ impl EcGroupRef {
+         ctx: &mut BigNumContextRef,
+     ) -> Result<(), ErrorStack> {
+         unsafe {
+-            cvt(ffi::EC_GROUP_get_curve_GFp(
++            cvt(ffi::EC_GROUP_get_curve(
+                 self.as_ptr(),
+                 p.as_ptr(),
+                 a.as_ptr(),
+@@ -541,7 +541,7 @@ impl EcPointRef {
+ 
+     /// Places affine coordinates of a curve over a prime field in the provided
+     /// `x` and `y` `BigNum`s
+-    #[corresponds(EC_POINT_get_affine_coordinates_GFp)]
++    #[corresponds(EC_POINT_get_affine_coordinates)]
+     pub fn affine_coordinates_gfp(
+         &self,
+         group: &EcGroupRef,
+@@ -550,7 +550,7 @@ impl EcPointRef {
+         ctx: &mut BigNumContextRef,
+     ) -> Result<(), ErrorStack> {
+         unsafe {
+-            cvt(ffi::EC_POINT_get_affine_coordinates_GFp(
++            cvt(ffi::EC_POINT_get_affine_coordinates(
+                 group.as_ptr(),
+                 self.as_ptr(),
+                 x.as_ptr(),
+@@ -586,7 +586,7 @@ impl EcPointRef {
+ 
+     /// Sets affine coordinates of a curve over a prime field using the provided
+     /// `x` and `y` `BigNum`s
+-    #[corresponds(EC_POINT_set_affine_coordinates_GFp)]
++    #[corresponds(EC_POINT_set_affine_coordinates)]
+     pub fn set_affine_coordinates_gfp(
+         &mut self,
+         group: &EcGroupRef,
+@@ -595,7 +595,7 @@ impl EcPointRef {
+         ctx: &mut BigNumContextRef,
+     ) -> Result<(), ErrorStack> {
+         unsafe {
+-            cvt(ffi::EC_POINT_set_affine_coordinates_GFp(
++            cvt(ffi::EC_POINT_set_affine_coordinates(
+                 group.as_ptr(),
+                 self.as_ptr(),
+                 x.as_ptr(),

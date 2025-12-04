@@ -1,0 +1,17 @@
+Index: src/_cffi_src/openssl/asn1.py
+--- src/_cffi_src/openssl/asn1.py.orig
++++ src/_cffi_src/openssl/asn1.py
+@@ -13,12 +13,7 @@ typedef int... time_t;
+ 
+ typedef ... ASN1_INTEGER;
+ 
+-struct asn1_string_st {
+-    int length;
+-    int type;
+-    unsigned char *data;
+-    long flags;
+-};
++struct asn1_string_st;
+ 
+ typedef struct asn1_string_st ASN1_OCTET_STRING;
+ typedef struct asn1_string_st ASN1_IA5STRING;
