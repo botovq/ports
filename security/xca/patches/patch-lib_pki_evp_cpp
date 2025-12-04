@@ -1,0 +1,14 @@
+Index: lib/pki_evp.cpp
+--- lib/pki_evp.cpp.orig
++++ lib/pki_evp.cpp
+@@ -27,6 +27,10 @@
+ #include <openssl/proverr.h>
+ #endif
+ 
++#ifndef PEMerr
++#define PEMerr(f, r) ERR_PUT_error(ERR_LIB_PEM, (f), (r), __FILE__, __LINE__)
++#endif
++
+ Passwd pki_evp::passwd;
+ 
+ QString pki_evp::passHash = QString();

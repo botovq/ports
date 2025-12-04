@@ -12,3 +12,12 @@ Index: widgets/CertDetail.cpp
  		QString purpname = X509_PURPOSE_get0_name(purp);
  		int id = X509_PURPOSE_get_id(purp);
  		qDebug() << "Purpose: " << purpname << " (" << id << ")";
+@@ -289,7 +289,7 @@ QLabel *CertDetail::labelFromAsn1String(ASN1_STRING *s
+ 	QLabel *label;
+ 	label = new CopyLabel(this);
+ 	label->setText(asn1ToQString(s));
+-	label->setToolTip(QString(ASN1_tag2str(s->type)));
++	label->setToolTip(QString(ASN1_tag2str(ASN1_STRING_type(s))));
+ 	return label;
+ }
+ 

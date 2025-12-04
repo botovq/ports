@@ -1,0 +1,12 @@
+Index: lib/pki_key.cpp
+--- lib/pki_key.cpp.orig
++++ lib/pki_key.cpp
+@@ -151,7 +151,7 @@ void pki_key::fillJWK(QJsonObject &json, const pki_exp
+ 		BIGNUM *x = BN_new(), *y = BN_new();
+ 		Q_CHECK_PTR(x);
+ 		Q_CHECK_PTR(y);
+-		if (EC_POINT_get_affine_coordinates_GFp(EC_KEY_get0_group(ec),
++		if (EC_POINT_get_affine_coordinates(EC_KEY_get0_group(ec),
+ 			EC_KEY_get0_public_key(ec), x, y, NULL))
+ 		{
+ 			int bits = EVP_PKEY_bits(key);
